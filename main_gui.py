@@ -199,15 +199,21 @@ class Character:
     name: str
     elements: List[Element]
     health: int
-    energy: int
-    ability: str
-    description: str
-    passive_ability: str
-    passive_description: str
+    energy: int  # 普通人为0，魔法师有魔力上限
+    defense: int  # 防御力
+    attack: int  # 攻击力
+    ability: str  # 专属技能名称
+    description: str  # 专属技能描述
+    is_active_ability: bool  # 是否为主动技能
     image_path: Optional[str] = None
     
     def has_element(self, element: Element) -> bool:
         return element in self.elements
+    
+    def is_mage(self) -> bool:
+        """判断是否为魔法师"""
+        # 只有物理属性的是普通人，其他都是魔法师
+        return not (len(self.elements) == 1 and self.elements[0] == Element.PHYSICAL)
     
     def get_image(self) -> Optional[pygame.Surface]:
         """获取角色图片"""
@@ -358,18 +364,83 @@ class CharacterDatabase:
     
     def _initialize_characters(self):
         self.all_characters = [
-            Character("xxmlt", "金天", [Element.WATER], 25, 15,
-                     "治疗", "消耗5点魔力，指定一个友方目标获得5点生命值。",
-                     "死生", "每局对战限一次，当我方人物受到致命伤时，不使其下场,而是使生命值降为1。",
-                     str(CHARACTERS_DIR / "jintian.png")),
-            Character("neko", "三金", [Element.WIND], 20, 25,
-                     "吹飞", "消耗10点魔力，选择一项：指定一个对方目标下场；或令一个效果消失。",
-                     "", "",
-                     str(CHARACTERS_DIR / "sanjin.png")),
-            Character("soybeanmilk", "江源", [Element.LIGHT], 20, 20,
-                     "恢复", "消耗10点魔力将场上存在的其他人或魔物状态恢复至上回合结束时。",
-                     "无", "什么？都能回溯了你还想要被动？",
-                     str(CHARACTERS_DIR / "jiangyuan.png")),
+            # 魔法师角色 - 光属性
+            Character("light_mage1", "光明祭司", [Element.LIGHT], 20, 20, 3, 2,
+                     "圣光治愈", "消耗8点魔力，恢复友方角色8点生命值。",
+                     True,
+                     str(CHARACTERS_DIR / "light_priest.png")),
+            Character("light_mage2", "光辉骑士", [Element.LIGHT], 25, 15, 4, 3,
+                     "光明斩击", "消耗10点魔力，对目标造成8点光属性伤害。",
+                     True,
+                     str(CHARACTERS_DIR / "light_knight.png")),
+            
+            # 魔法师角色 - 暗属性
+            Character("dark_mage1", "暗影术士", [Element.DARK], 22, 18, 2, 3,
+                     "暗影腐蚀", "消耗12点魔力，目标下回合防御力-3。",
+                     True,
+                     str(CHARACTERS_DIR / "dark_mage.png")),
+            Character("dark_mage2", "死亡骑士", [Element.DARK], 28, 12, 3, 4,
+                     "死亡之握", "消耗15点魔力，对目标造成10点暗属性伤害并附加混乱1回合。",
+                     True,
+                     str(CHARACTERS_DIR / "death_knight.png")),
+            
+            # 魔法师角色 - 地属性
+            Character("earth_mage1", "大地守护者", [Element.EARTH], 30, 15, 5, 2,
+                     "岩石护盾", "消耗6点魔力，获得嘲讽状态和+3防御力，持续2回合。",
+                     True,
+                     str(CHARACTERS_DIR / "earth_guardian.png")),
+            Character("earth_mage2", "震地者", [Element.EARTH], 24, 20, 3, 3,
+                     "地震术", "消耗14点魔力，对所有敌方角色造成6点地属性伤害。",
+                     True,
+                     str(CHARACTERS_DIR / "earth_shaker.png")),
+            
+            # 魔法师角色 - 火属性
+            Character("fire_mage1", "火焰法师", [Element.FIRE], 18, 22, 1, 4,
+                     "火球术", "消耗9点魔力，对目标造成10点火属性伤害。",
+                     True,
+                     str(CHARACTERS_DIR / "fire_mage.png")),
+            Character("fire_mage2", "炎魔", [Element.FIRE], 22, 18, 2, 4,
+                     "烈焰风暴", "消耗16点魔力，对目标造成12点火属性伤害。",
+                     True,
+                     str(CHARACTERS_DIR / "fire_demon.png")),
+            
+            # 魔法师角色 - 水属性
+            Character("water_mage1", "水元素使", [Element.WATER], 20, 20, 2, 3,
+                     "治疗波", "消耗7点魔力，恢复所有友方角色5点生命值。",
+                     True,
+                     str(CHARACTERS_DIR / "water_mage.png")),
+            Character("water_mage2", "冰霜巫师", [Element.WATER], 22, 18, 3, 3,
+                     "冰霜新星", "消耗11点魔力，对目标造成8点水属性伤害并冻结1回合。",
+                     True,
+                     str(CHARACTERS_DIR / "frost_mage.png")),
+            
+            # 魔法师角色 - 风属性
+            Character("wind_mage1", "风语者", [Element.WIND], 19, 21, 1, 3,
+                     "风刃", "消耗8点魔力，对目标造成9点风属性伤害。",
+                     True,
+                     str(CHARACTERS_DIR / "wind_caller.png")),
+            Character("wind_mage2", "风暴领主", [Element.WIND], 21, 19, 2, 4,
+                     "雷霆一击", "消耗13点魔力，对目标造成11点风属性伤害。",
+                     True,
+                     str(CHARACTERS_DIR / "storm_lord.png")),
+            
+            # 普通人角色
+            Character("warrior", "战士", [Element.PHYSICAL], 35, 0, 6, 4,
+                     "重击", "对目标造成6点物理伤害。",
+                     True,
+                     str(CHARACTERS_DIR / "warrior.png")),
+            Character("archer", "弓箭手", [Element.PHYSICAL], 25, 0, 3, 5,
+                     "精准射击", "对目标造成5点物理伤害，无视2点防御力。",
+                     True,
+                     str(CHARACTERS_DIR / "archer.png")),
+            Character("rogue", "盗贼", [Element.PHYSICAL], 22, 0, 2, 6,
+                     "暗杀", "对目标造成7点物理伤害。",
+                     True,
+                     str(CHARACTERS_DIR / "rogue.png")),
+            Character("knight", "骑士", [Element.PHYSICAL], 40, 0, 8, 3,
+                     "盾击", "对目标造成4点物理伤害并使其下回合无法攻击。",
+                     True,
+                     str(CHARACTERS_DIR / "knight.png")),
         ]
     
     def get_all_characters(self) -> List[Character]:
@@ -694,6 +765,114 @@ class CardViewerScene(Scene):
             widget.draw(screen)
         
         self.back_button.draw(screen)
+    
+    def draw_network_battle(self, screen: pygame.Surface):
+        """绘制网络战斗界面"""
+        if not self.local_player:
+            return
+        
+        # 显示对战信息
+        title = self.font_title.render(f"战斗: {self.player_name} vs {self.opponent_name}", 
+                                      True, COLOR_TEXT)
+        screen.blit(title, (SCREEN_WIDTH//2 - title.get_width()//2, 20))
+        
+        # 显示回合状态
+        turn_text = f"回合 {self.turn_number} - {'你的回合' if self.my_turn else '对方回合'}"
+        turn_color = (100, 255, 100) if self.my_turn else (255, 100, 100)
+        turn_surf = self.font.render(turn_text, True, turn_color)
+        screen.blit(turn_surf, (SCREEN_WIDTH//2 - turn_surf.get_width()//2, 60))
+        
+        # 绘制对手区域（简化显示）
+        if self.remote_player:
+            opponent_y = 100
+            opp_name_surf = self.font.render(f"{self.opponent_name}", True, COLOR_TEXT)
+            screen.blit(opp_name_surf, (50, opponent_y))
+            
+            opp_base_text = f"基地HP: {self.remote_player.base_hp} MP: {self.remote_player.base_mana}"
+            opp_base_surf = self.font_small.render(opp_base_text, True, COLOR_TEXT_DIM)
+            screen.blit(opp_base_surf, (50, opponent_y + 30))
+        
+        # 绘制己方区域
+        my_y = SCREEN_HEIGHT - 300
+        my_name_surf = self.font.render(f"{self.player_name}", True, COLOR_TEXT)
+        screen.blit(my_name_surf, (50, my_y))
+        
+        # 基地状态
+        base_text = f"基地HP: {self.local_player.base_hp} MP: {self.local_player.base_mana}"
+        base_surf = self.font_small.render(base_text, True, COLOR_TEXT)
+        screen.blit(base_surf, (50, my_y + 30))
+        
+        # 绘制己方角色
+        for i, char_state in enumerate(self.local_player.chars[:2]):
+            char_x = 50 + i * 200
+            char_rect = pygame.Rect(char_x, my_y + 60, 180, 120)
+            
+            # 高亮选中的角色
+            if i == self.selected_actor_index:
+                pygame.draw.rect(screen, (100, 255, 100), char_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, char_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, char_rect, 2, border_radius=8)
+            
+            # 角色名
+            name = self.font_small.render(char_state.character.name, True, COLOR_TEXT)
+            screen.blit(name, (char_x + 10, my_y + 70))
+            
+            # HP条
+            hp_ratio = max(0, char_state.cur_hp / char_state.character.health)
+            hp_bar_rect = pygame.Rect(char_x + 10, my_y + 100, 160, 15)
+            pygame.draw.rect(screen, (50, 50, 50), hp_bar_rect)
+            hp_fill_rect = pygame.Rect(char_x + 10, my_y + 100, int(160 * hp_ratio), 15)
+            pygame.draw.rect(screen, COLOR_HP_BAR, hp_fill_rect)
+            hp_text = self.font_tiny.render(f"{char_state.cur_hp}/{char_state.character.health}", 
+                                          True, COLOR_TEXT)
+            screen.blit(hp_text, (char_x + 15, my_y + 102))
+            
+            # MP条
+            if char_state.character.is_mage():
+                mp_ratio = max(0, char_state.cur_energy / char_state.character.energy) if char_state.character.energy > 0 else 0
+                mp_bar_rect = pygame.Rect(char_x + 10, my_y + 120, 160, 15)
+                pygame.draw.rect(screen, (30, 30, 30), mp_bar_rect)
+                mp_fill_rect = pygame.Rect(char_x + 10, my_y + 120, int(160 * mp_ratio), 15)
+                pygame.draw.rect(screen, COLOR_ENERGY_BAR, mp_fill_rect)
+                mp_text = self.font_tiny.render(f"MP:{char_state.cur_energy}/{char_state.character.energy}",
+                                              True, COLOR_TEXT)
+                screen.blit(mp_text, (char_x + 15, my_y + 122))
+        
+        # 绘制手牌
+        hand_y = SCREEN_HEIGHT - 140
+        for i, card in enumerate(self.local_player.hand):
+            x = 50 + i * 130
+            card_rect = pygame.Rect(x, hand_y, 120, 100)
+            
+            # 高亮选中的牌
+            if i == self.selected_hand_index:
+                pygame.draw.rect(screen, (255, 255, 100), card_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, card_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, card_rect, 2, border_radius=8)
+            
+            name_surf = self.font_tiny.render(card.name[:10], True, COLOR_TEXT)
+            cost_surf = self.font_small.render(str(card.cost), True, COLOR_MANA_BAR)
+            screen.blit(name_surf, (x + 5, hand_y + 5))
+            screen.blit(cost_surf, (x + 5, hand_y + 25))
+        
+        # 绘制战斗日志
+        log_y = 200
+        for log in self.battle_log[-8:]:
+            log_surf = self.font_tiny.render(log, True, COLOR_TEXT_DIM)
+            screen.blit(log_surf, (SCREEN_WIDTH - 450, log_y))
+            log_y += 18
+        
+        # 按钮
+        self.back_button.draw(screen)
+        if self.my_turn and self.network_battle_started:
+            self.end_turn_button.draw(screen)
+            self.play_card_button.draw(screen)
+            
+            hint = self.font_small.render("选择手牌、角色和目标后点击出牌 | 1-3键发送表情", 
+                                         True, COLOR_TEXT_DIM)
+            screen.blit(hint, (SCREEN_WIDTH//2 - hint.get_width()//2, SCREEN_HEIGHT - 100))
 
 class CharacterViewerScene(Scene):
     """角色查看器场景"""
@@ -728,6 +907,114 @@ class CharacterViewerScene(Scene):
             widget.draw(screen)
         
         self.back_button.draw(screen)
+    
+    def draw_network_battle(self, screen: pygame.Surface):
+        """绘制网络战斗界面"""
+        if not self.local_player:
+            return
+        
+        # 显示对战信息
+        title = self.font_title.render(f"战斗: {self.player_name} vs {self.opponent_name}", 
+                                      True, COLOR_TEXT)
+        screen.blit(title, (SCREEN_WIDTH//2 - title.get_width()//2, 20))
+        
+        # 显示回合状态
+        turn_text = f"回合 {self.turn_number} - {'你的回合' if self.my_turn else '对方回合'}"
+        turn_color = (100, 255, 100) if self.my_turn else (255, 100, 100)
+        turn_surf = self.font.render(turn_text, True, turn_color)
+        screen.blit(turn_surf, (SCREEN_WIDTH//2 - turn_surf.get_width()//2, 60))
+        
+        # 绘制对手区域（简化显示）
+        if self.remote_player:
+            opponent_y = 100
+            opp_name_surf = self.font.render(f"{self.opponent_name}", True, COLOR_TEXT)
+            screen.blit(opp_name_surf, (50, opponent_y))
+            
+            opp_base_text = f"基地HP: {self.remote_player.base_hp} MP: {self.remote_player.base_mana}"
+            opp_base_surf = self.font_small.render(opp_base_text, True, COLOR_TEXT_DIM)
+            screen.blit(opp_base_surf, (50, opponent_y + 30))
+        
+        # 绘制己方区域
+        my_y = SCREEN_HEIGHT - 300
+        my_name_surf = self.font.render(f"{self.player_name}", True, COLOR_TEXT)
+        screen.blit(my_name_surf, (50, my_y))
+        
+        # 基地状态
+        base_text = f"基地HP: {self.local_player.base_hp} MP: {self.local_player.base_mana}"
+        base_surf = self.font_small.render(base_text, True, COLOR_TEXT)
+        screen.blit(base_surf, (50, my_y + 30))
+        
+        # 绘制己方角色
+        for i, char_state in enumerate(self.local_player.chars[:2]):
+            char_x = 50 + i * 200
+            char_rect = pygame.Rect(char_x, my_y + 60, 180, 120)
+            
+            # 高亮选中的角色
+            if i == self.selected_actor_index:
+                pygame.draw.rect(screen, (100, 255, 100), char_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, char_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, char_rect, 2, border_radius=8)
+            
+            # 角色名
+            name = self.font_small.render(char_state.character.name, True, COLOR_TEXT)
+            screen.blit(name, (char_x + 10, my_y + 70))
+            
+            # HP条
+            hp_ratio = max(0, char_state.cur_hp / char_state.character.health)
+            hp_bar_rect = pygame.Rect(char_x + 10, my_y + 100, 160, 15)
+            pygame.draw.rect(screen, (50, 50, 50), hp_bar_rect)
+            hp_fill_rect = pygame.Rect(char_x + 10, my_y + 100, int(160 * hp_ratio), 15)
+            pygame.draw.rect(screen, COLOR_HP_BAR, hp_fill_rect)
+            hp_text = self.font_tiny.render(f"{char_state.cur_hp}/{char_state.character.health}", 
+                                          True, COLOR_TEXT)
+            screen.blit(hp_text, (char_x + 15, my_y + 102))
+            
+            # MP条
+            if char_state.character.is_mage():
+                mp_ratio = max(0, char_state.cur_energy / char_state.character.energy) if char_state.character.energy > 0 else 0
+                mp_bar_rect = pygame.Rect(char_x + 10, my_y + 120, 160, 15)
+                pygame.draw.rect(screen, (30, 30, 30), mp_bar_rect)
+                mp_fill_rect = pygame.Rect(char_x + 10, my_y + 120, int(160 * mp_ratio), 15)
+                pygame.draw.rect(screen, COLOR_ENERGY_BAR, mp_fill_rect)
+                mp_text = self.font_tiny.render(f"MP:{char_state.cur_energy}/{char_state.character.energy}",
+                                              True, COLOR_TEXT)
+                screen.blit(mp_text, (char_x + 15, my_y + 122))
+        
+        # 绘制手牌
+        hand_y = SCREEN_HEIGHT - 140
+        for i, card in enumerate(self.local_player.hand):
+            x = 50 + i * 130
+            card_rect = pygame.Rect(x, hand_y, 120, 100)
+            
+            # 高亮选中的牌
+            if i == self.selected_hand_index:
+                pygame.draw.rect(screen, (255, 255, 100), card_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, card_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, card_rect, 2, border_radius=8)
+            
+            name_surf = self.font_tiny.render(card.name[:10], True, COLOR_TEXT)
+            cost_surf = self.font_small.render(str(card.cost), True, COLOR_MANA_BAR)
+            screen.blit(name_surf, (x + 5, hand_y + 5))
+            screen.blit(cost_surf, (x + 5, hand_y + 25))
+        
+        # 绘制战斗日志
+        log_y = 200
+        for log in self.battle_log[-8:]:
+            log_surf = self.font_tiny.render(log, True, COLOR_TEXT_DIM)
+            screen.blit(log_surf, (SCREEN_WIDTH - 450, log_y))
+            log_y += 18
+        
+        # 按钮
+        self.back_button.draw(screen)
+        if self.my_turn and self.network_battle_started:
+            self.end_turn_button.draw(screen)
+            self.play_card_button.draw(screen)
+            
+            hint = self.font_small.render("选择手牌、角色和目标后点击出牌 | 1-3键发送表情", 
+                                         True, COLOR_TEXT_DIM)
+            screen.blit(hint, (SCREEN_WIDTH//2 - hint.get_width()//2, SCREEN_HEIGHT - 100))
 
 class DeckBuilderScene(Scene):
     """牌组创建器场景"""
@@ -965,6 +1252,114 @@ class DeckBuilderScene(Scene):
             self.finish_button.draw(screen)
         
         self.back_button.draw(screen)
+    
+    def draw_network_battle(self, screen: pygame.Surface):
+        """绘制网络战斗界面"""
+        if not self.local_player:
+            return
+        
+        # 显示对战信息
+        title = self.font_title.render(f"战斗: {self.player_name} vs {self.opponent_name}", 
+                                      True, COLOR_TEXT)
+        screen.blit(title, (SCREEN_WIDTH//2 - title.get_width()//2, 20))
+        
+        # 显示回合状态
+        turn_text = f"回合 {self.turn_number} - {'你的回合' if self.my_turn else '对方回合'}"
+        turn_color = (100, 255, 100) if self.my_turn else (255, 100, 100)
+        turn_surf = self.font.render(turn_text, True, turn_color)
+        screen.blit(turn_surf, (SCREEN_WIDTH//2 - turn_surf.get_width()//2, 60))
+        
+        # 绘制对手区域（简化显示）
+        if self.remote_player:
+            opponent_y = 100
+            opp_name_surf = self.font.render(f"{self.opponent_name}", True, COLOR_TEXT)
+            screen.blit(opp_name_surf, (50, opponent_y))
+            
+            opp_base_text = f"基地HP: {self.remote_player.base_hp} MP: {self.remote_player.base_mana}"
+            opp_base_surf = self.font_small.render(opp_base_text, True, COLOR_TEXT_DIM)
+            screen.blit(opp_base_surf, (50, opponent_y + 30))
+        
+        # 绘制己方区域
+        my_y = SCREEN_HEIGHT - 300
+        my_name_surf = self.font.render(f"{self.player_name}", True, COLOR_TEXT)
+        screen.blit(my_name_surf, (50, my_y))
+        
+        # 基地状态
+        base_text = f"基地HP: {self.local_player.base_hp} MP: {self.local_player.base_mana}"
+        base_surf = self.font_small.render(base_text, True, COLOR_TEXT)
+        screen.blit(base_surf, (50, my_y + 30))
+        
+        # 绘制己方角色
+        for i, char_state in enumerate(self.local_player.chars[:2]):
+            char_x = 50 + i * 200
+            char_rect = pygame.Rect(char_x, my_y + 60, 180, 120)
+            
+            # 高亮选中的角色
+            if i == self.selected_actor_index:
+                pygame.draw.rect(screen, (100, 255, 100), char_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, char_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, char_rect, 2, border_radius=8)
+            
+            # 角色名
+            name = self.font_small.render(char_state.character.name, True, COLOR_TEXT)
+            screen.blit(name, (char_x + 10, my_y + 70))
+            
+            # HP条
+            hp_ratio = max(0, char_state.cur_hp / char_state.character.health)
+            hp_bar_rect = pygame.Rect(char_x + 10, my_y + 100, 160, 15)
+            pygame.draw.rect(screen, (50, 50, 50), hp_bar_rect)
+            hp_fill_rect = pygame.Rect(char_x + 10, my_y + 100, int(160 * hp_ratio), 15)
+            pygame.draw.rect(screen, COLOR_HP_BAR, hp_fill_rect)
+            hp_text = self.font_tiny.render(f"{char_state.cur_hp}/{char_state.character.health}", 
+                                          True, COLOR_TEXT)
+            screen.blit(hp_text, (char_x + 15, my_y + 102))
+            
+            # MP条
+            if char_state.character.is_mage():
+                mp_ratio = max(0, char_state.cur_energy / char_state.character.energy) if char_state.character.energy > 0 else 0
+                mp_bar_rect = pygame.Rect(char_x + 10, my_y + 120, 160, 15)
+                pygame.draw.rect(screen, (30, 30, 30), mp_bar_rect)
+                mp_fill_rect = pygame.Rect(char_x + 10, my_y + 120, int(160 * mp_ratio), 15)
+                pygame.draw.rect(screen, COLOR_ENERGY_BAR, mp_fill_rect)
+                mp_text = self.font_tiny.render(f"MP:{char_state.cur_energy}/{char_state.character.energy}",
+                                              True, COLOR_TEXT)
+                screen.blit(mp_text, (char_x + 15, my_y + 122))
+        
+        # 绘制手牌
+        hand_y = SCREEN_HEIGHT - 140
+        for i, card in enumerate(self.local_player.hand):
+            x = 50 + i * 130
+            card_rect = pygame.Rect(x, hand_y, 120, 100)
+            
+            # 高亮选中的牌
+            if i == self.selected_hand_index:
+                pygame.draw.rect(screen, (255, 255, 100), card_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, card_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, card_rect, 2, border_radius=8)
+            
+            name_surf = self.font_tiny.render(card.name[:10], True, COLOR_TEXT)
+            cost_surf = self.font_small.render(str(card.cost), True, COLOR_MANA_BAR)
+            screen.blit(name_surf, (x + 5, hand_y + 5))
+            screen.blit(cost_surf, (x + 5, hand_y + 25))
+        
+        # 绘制战斗日志
+        log_y = 200
+        for log in self.battle_log[-8:]:
+            log_surf = self.font_tiny.render(log, True, COLOR_TEXT_DIM)
+            screen.blit(log_surf, (SCREEN_WIDTH - 450, log_y))
+            log_y += 18
+        
+        # 按钮
+        self.back_button.draw(screen)
+        if self.my_turn and self.network_battle_started:
+            self.end_turn_button.draw(screen)
+            self.play_card_button.draw(screen)
+            
+            hint = self.font_small.render("选择手牌、角色和目标后点击出牌 | 1-3键发送表情", 
+                                         True, COLOR_TEXT_DIM)
+            screen.blit(hint, (SCREEN_WIDTH//2 - hint.get_width()//2, SCREEN_HEIGHT - 100))
 
 class DeckListScene(Scene):
     """牌组列表场景"""
@@ -1045,6 +1440,114 @@ class DeckListScene(Scene):
             screen.blit(text, (SCREEN_WIDTH//2 - text.get_width()//2, 300))
         
         self.back_button.draw(screen)
+    
+    def draw_network_battle(self, screen: pygame.Surface):
+        """绘制网络战斗界面"""
+        if not self.local_player:
+            return
+        
+        # 显示对战信息
+        title = self.font_title.render(f"战斗: {self.player_name} vs {self.opponent_name}", 
+                                      True, COLOR_TEXT)
+        screen.blit(title, (SCREEN_WIDTH//2 - title.get_width()//2, 20))
+        
+        # 显示回合状态
+        turn_text = f"回合 {self.turn_number} - {'你的回合' if self.my_turn else '对方回合'}"
+        turn_color = (100, 255, 100) if self.my_turn else (255, 100, 100)
+        turn_surf = self.font.render(turn_text, True, turn_color)
+        screen.blit(turn_surf, (SCREEN_WIDTH//2 - turn_surf.get_width()//2, 60))
+        
+        # 绘制对手区域（简化显示）
+        if self.remote_player:
+            opponent_y = 100
+            opp_name_surf = self.font.render(f"{self.opponent_name}", True, COLOR_TEXT)
+            screen.blit(opp_name_surf, (50, opponent_y))
+            
+            opp_base_text = f"基地HP: {self.remote_player.base_hp} MP: {self.remote_player.base_mana}"
+            opp_base_surf = self.font_small.render(opp_base_text, True, COLOR_TEXT_DIM)
+            screen.blit(opp_base_surf, (50, opponent_y + 30))
+        
+        # 绘制己方区域
+        my_y = SCREEN_HEIGHT - 300
+        my_name_surf = self.font.render(f"{self.player_name}", True, COLOR_TEXT)
+        screen.blit(my_name_surf, (50, my_y))
+        
+        # 基地状态
+        base_text = f"基地HP: {self.local_player.base_hp} MP: {self.local_player.base_mana}"
+        base_surf = self.font_small.render(base_text, True, COLOR_TEXT)
+        screen.blit(base_surf, (50, my_y + 30))
+        
+        # 绘制己方角色
+        for i, char_state in enumerate(self.local_player.chars[:2]):
+            char_x = 50 + i * 200
+            char_rect = pygame.Rect(char_x, my_y + 60, 180, 120)
+            
+            # 高亮选中的角色
+            if i == self.selected_actor_index:
+                pygame.draw.rect(screen, (100, 255, 100), char_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, char_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, char_rect, 2, border_radius=8)
+            
+            # 角色名
+            name = self.font_small.render(char_state.character.name, True, COLOR_TEXT)
+            screen.blit(name, (char_x + 10, my_y + 70))
+            
+            # HP条
+            hp_ratio = max(0, char_state.cur_hp / char_state.character.health)
+            hp_bar_rect = pygame.Rect(char_x + 10, my_y + 100, 160, 15)
+            pygame.draw.rect(screen, (50, 50, 50), hp_bar_rect)
+            hp_fill_rect = pygame.Rect(char_x + 10, my_y + 100, int(160 * hp_ratio), 15)
+            pygame.draw.rect(screen, COLOR_HP_BAR, hp_fill_rect)
+            hp_text = self.font_tiny.render(f"{char_state.cur_hp}/{char_state.character.health}", 
+                                          True, COLOR_TEXT)
+            screen.blit(hp_text, (char_x + 15, my_y + 102))
+            
+            # MP条
+            if char_state.character.is_mage():
+                mp_ratio = max(0, char_state.cur_energy / char_state.character.energy) if char_state.character.energy > 0 else 0
+                mp_bar_rect = pygame.Rect(char_x + 10, my_y + 120, 160, 15)
+                pygame.draw.rect(screen, (30, 30, 30), mp_bar_rect)
+                mp_fill_rect = pygame.Rect(char_x + 10, my_y + 120, int(160 * mp_ratio), 15)
+                pygame.draw.rect(screen, COLOR_ENERGY_BAR, mp_fill_rect)
+                mp_text = self.font_tiny.render(f"MP:{char_state.cur_energy}/{char_state.character.energy}",
+                                              True, COLOR_TEXT)
+                screen.blit(mp_text, (char_x + 15, my_y + 122))
+        
+        # 绘制手牌
+        hand_y = SCREEN_HEIGHT - 140
+        for i, card in enumerate(self.local_player.hand):
+            x = 50 + i * 130
+            card_rect = pygame.Rect(x, hand_y, 120, 100)
+            
+            # 高亮选中的牌
+            if i == self.selected_hand_index:
+                pygame.draw.rect(screen, (255, 255, 100), card_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, card_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, card_rect, 2, border_radius=8)
+            
+            name_surf = self.font_tiny.render(card.name[:10], True, COLOR_TEXT)
+            cost_surf = self.font_small.render(str(card.cost), True, COLOR_MANA_BAR)
+            screen.blit(name_surf, (x + 5, hand_y + 5))
+            screen.blit(cost_surf, (x + 5, hand_y + 25))
+        
+        # 绘制战斗日志
+        log_y = 200
+        for log in self.battle_log[-8:]:
+            log_surf = self.font_tiny.render(log, True, COLOR_TEXT_DIM)
+            screen.blit(log_surf, (SCREEN_WIDTH - 450, log_y))
+            log_y += 18
+        
+        # 按钮
+        self.back_button.draw(screen)
+        if self.my_turn and self.network_battle_started:
+            self.end_turn_button.draw(screen)
+            self.play_card_button.draw(screen)
+            
+            hint = self.font_small.render("选择手牌、角色和目标后点击出牌 | 1-3键发送表情", 
+                                         True, COLOR_TEXT_DIM)
+            screen.blit(hint, (SCREEN_WIDTH//2 - hint.get_width()//2, SCREEN_HEIGHT - 100))
         self.create_button.draw(screen)
         if self.game.decks:
             self.detail_button.draw(screen)
@@ -1057,17 +1560,170 @@ class CharacterState:
     character: Character
     cur_hp: int
     cur_energy: int
+    taunt: bool = False  # 嘲讽状态
+    confused: bool = False  # 混乱状态
+    
+    def take_damage(self, damage: int, is_magic: bool, base_player) -> int:
+        """
+        接受伤害并返回溢出伤害
+        根据规则IV-a和IV-b实现伤害计算
+        Args:
+            damage: 原始伤害（已考虑技能x2和属性匹配）
+            is_magic: 是否为魔法伤害
+            base_player: 玩家状态（用于扣除基地血量）
+        Returns:
+            溢出伤害
+        """
+        # IV-a 魔法师伤害计算
+        if self.character.is_mage():
+            if is_magic:
+                # 受到魔法伤害，优先扣除魔力
+                mana_absorbed = min(self.cur_energy, damage)
+                self.cur_energy -= mana_absorbed
+                remaining_damage = damage - mana_absorbed
+                
+                # 扣除生命值
+                if remaining_damage > 0:
+                    self.cur_hp -= remaining_damage
+            else:
+                # 受到物理伤害，直接扣除血量
+                self.cur_hp -= damage
+        else:
+            # IV-b 普通人伤害计算：不论何种伤害均扣除血量
+            self.cur_hp -= damage
+        
+        # 计算溢出伤害
+        overflow = 0
+        if self.cur_hp < 0:
+            overflow = -self.cur_hp
+            self.cur_hp = 0
+        
+        return overflow
+    
+    def can_attack(self) -> bool:
+        """检查角色是否可以攻击"""
+        return not self.confused and self.cur_hp > 0
 
 @dataclass
 class PlayerBattleState:
     """玩家战斗状态"""
     name: str
-    base_hp: int = 50
-    base_mana: int = 30
-    chars: List[CharacterState] = field(default_factory=list)
+    base_hp: int = 50  # 基地生命值
+    base_mana: int = 30  # 基地魔力
+    chars: List[CharacterState] = field(default_factory=list)  # [前场1, 前场2, 后场]
     deck: List[Card] = field(default_factory=list)
     hand: List[Card] = field(default_factory=list)
     discard: List[Card] = field(default_factory=list)
+    extra_mana_per_turn: int = 0  # 每回合额外魔力
+    
+    def get_active_chars(self) -> List[CharacterState]:
+        """获取前场角色"""
+        return self.chars[:2]
+    
+    def has_reserve(self) -> bool:
+        """是否有后场角色"""
+        return len(self.chars) >= 3
+    
+    def get_reserve_char(self) -> Optional[CharacterState]:
+        """获取后场角色"""
+        if self.has_reserve():
+            return self.chars[2]
+        return None
+    
+    def swap_to_reserve(self, field_idx: int) -> bool:
+        """将前场角色替换为后场"""
+        if field_idx < 0 or field_idx >= 2:
+            return False
+        if not self.has_reserve():
+            return False
+        
+        self.chars[field_idx] = self.chars[2]
+        self.chars.pop(2)
+        return True
+    
+    def start_turn(self):
+        """
+        回合开始时的操作
+        根据规则V：补充魔力和角色能量，生成专属技能卡牌
+        """
+        # 恢复基地魔力（每回合+5基础+额外魔力）
+        self.base_mana = min(30, self.base_mana + 5 + self.extra_mana_per_turn)
+        
+        # 恢复角色能量（每个魔法师+5魔力）
+        for char_state in self.chars:
+            if char_state.character.is_mage():
+                max_energy = char_state.character.energy
+                char_state.cur_energy = min(max_energy, char_state.cur_energy + 5)
+        
+        # 根据规则V：将场上角色的主动专属技能作为卡牌加入手牌
+        for char_state in self.chars:
+            if char_state.character.is_active_ability and char_state.cur_hp > 0:
+                # 创建专属技能卡牌
+                ability_card = Card(
+                    f"ability_{char_state.character.id}",
+                    char_state.character.ability,
+                    [Element.PHYSICAL] if not char_state.character.is_mage() else char_state.character.elements,
+                    0,  # 费用在打出时根据技能描述计算
+                    Rarity.MYTHIC,
+                    char_state.character.description
+                )
+                self.hand.append(ability_card)
+        
+        # 抽1张牌
+        if self.deck:
+            self.hand.append(self.deck.pop(0))
+    
+    def pay_cost(self, cost: int, actor: CharacterState) -> bool:
+        """
+        支付卡牌费用
+        根据规则III：魔法师优先消耗自身魔力，不足时消耗基地魔力
+        """
+        remaining = cost
+        
+        # 魔法师优先消耗自身魔力
+        if actor.character.is_mage():
+            from_char = min(actor.cur_energy, remaining)
+            actor.cur_energy -= from_char
+            remaining -= from_char
+        
+        # 消耗基地魔力（剩余部分）
+        from_base = min(self.base_mana, remaining)
+        self.base_mana -= from_base
+        remaining -= from_base
+        
+        # 用生命支付剩余（特殊卡牌效果，部分牌可以更改此规则）
+        if remaining > 0:
+            actor.cur_hp -= remaining
+            if actor.cur_hp <= 0:
+                return False
+        
+        return True
+    
+    def get_valid_targets(self, attacker: CharacterState, opponent: 'PlayerBattleState') -> List[str]:
+        """
+        获取有效目标列表
+        根据规则V的嘲讽状态：当对手有嘲讽时，只能攻击嘲讽角色
+        """
+        targets = []
+        
+        # 检查对手是否有嘲讽状态
+        taunt_chars = [char for char in opponent.get_active_chars() if char.taunt and char.cur_hp > 0]
+        
+        if taunt_chars:
+            # 只能攻击有嘲讽的角色
+            for i, char in enumerate(opponent.get_active_chars()):
+                if char.taunt and char.cur_hp > 0:
+                    targets.append(f"t{i}")
+        else:
+            # 可以攻击任何角色
+            for i, char in enumerate(opponent.get_active_chars()):
+                if char.cur_hp > 0:
+                    targets.append(f"t{i}")
+            
+            # 可以攻击基地
+            targets.append("b")
+        
+        return targets
 
 class BattleScene(Scene):
     """对战场景"""
@@ -1100,7 +1756,11 @@ class BattleScene(Scene):
                                          callback=self.end_turn)
     
     def _init_battle(self) -> bool:
-        """初始化战斗"""
+        """
+        初始化战斗
+        根据规则II：每位玩家拥有基地50生命值与30魔力，角色满生命值，魔力为上限一半
+        根据规则III：对局开始时随机获得3张各自牌堆中的牌作为手牌
+        """
         if len(self.game.decks) < 2:
             self.add_log("需要至少2个牌组才能开始对战")
             return False
@@ -1112,14 +1772,21 @@ class BattleScene(Scene):
         self.player1 = PlayerBattleState(f"玩家1 ({deck1.name})")
         self.player2 = PlayerBattleState(f"玩家2 ({deck2.name})")
         
-        # 初始化角色（从牌组中获取）
+        # 根据规则II：每位玩家选择三位不同人物，其中两位作为上场人物，一位作为备场人物
+        # 初始化角色（前两位上场，第三位后场）
         for char in deck1.characters[:3]:
-            cs = CharacterState(char, char.health, (char.energy + 1) // 2)
+            # 角色拥有满生命值
+            # 魔法师初始魔力为上限的一半（向上取整），普通人为0
+            initial_energy = (char.energy + 1) // 2 if char.is_mage() else 0
+            cs = CharacterState(char, char.health, initial_energy)
             self.player1.chars.append(cs)
+            self.add_log(f"{cs.character.name} 加入战场 (HP:{cs.cur_hp}, MP:{cs.cur_energy})")
         
         for char in deck2.characters[:3]:
-            cs = CharacterState(char, char.health, (char.energy + 1) // 2)
+            initial_energy = (char.energy + 1) // 2 if char.is_mage() else 0
+            cs = CharacterState(char, char.health, initial_energy)
             self.player2.chars.append(cs)
+            self.add_log(f"{cs.character.name} 加入战场 (HP:{cs.cur_hp}, MP:{cs.cur_energy})")
         
         # 初始化牌库并洗牌
         self.player1.deck = deck1.cards.copy()
@@ -1127,14 +1794,16 @@ class BattleScene(Scene):
         random.shuffle(self.player1.deck)
         random.shuffle(self.player2.deck)
         
-        # 抽初始手牌
+        # 根据规则III：对局开始时随机获得三张各自牌堆中的牌作为手牌
         for _ in range(3):
             if self.player1.deck:
-                self.player1.hand.append(self.player1.deck.pop())
+                self.player1.hand.append(self.player1.deck.pop(0))
             if self.player2.deck:
-                self.player2.hand.append(self.player2.deck.pop())
+                self.player2.hand.append(self.player2.deck.pop(0))
         
         self.add_log("战斗开始！")
+        self.add_log(f"{self.player1.name} vs {self.player2.name}")
+        self.add_log(f"双方基地HP:50, MP:30，手牌3张")
         return True
     
     def add_log(self, msg: str):
@@ -1151,19 +1820,11 @@ class BattleScene(Scene):
         self.game.change_scene(GameState.MAIN_MENU)
     
     def end_turn(self):
-        """结束回合"""
+        """
+        结束回合
+        根据规则V：每回合开始时补充魔力和生成专属技能卡牌
+        """
         current_player = self.player1 if self.current_turn == 0 else self.player2
-        
-        # 恢复魔力和能量
-        current_player.base_mana = min(30, current_player.base_mana + 5)
-        for char_state in current_player.chars:
-            max_energy = char_state.character.energy
-            char_state.cur_energy = min(max_energy, char_state.cur_energy + 5)
-        
-        # 抽牌
-        if current_player.deck:
-            current_player.hand.append(current_player.deck.pop())
-            self.add_log(f"{current_player.name} 抽了1张牌")
         
         # 切换回合
         self.current_turn = 1 - self.current_turn
@@ -1172,15 +1833,31 @@ class BattleScene(Scene):
         self.selected_actor_index = -1
         self.selected_target = None
         
+        # 下一个玩家开始回合（包含补充魔力、生成专属技能卡牌、抽牌）
         next_player = self.player1 if self.current_turn == 0 else self.player2
+        next_player.start_turn()
+        
         self.add_log(f"--- 回合 {self.turn_number}: {next_player.name} ---")
+        self.add_log(f"{next_player.name} 基地MP:{next_player.base_mana}/30")
+        
+        # 显示生成的专属技能卡牌
+        ability_cards = [card for card in next_player.hand if card.id.startswith("ability_")]
+        if ability_cards:
+            for card in ability_cards[-len(next_player.chars):]:  # 只显示新生成的
+                self.add_log(f"生成专属技能: {card.name}")
+        
+        # 显示抽牌信息
+        self.add_log(f"{next_player.name} 手牌: {len(next_player.hand)}张")
     
     def is_mage(self, char: Character) -> bool:
         """判断是否为法师"""
         return any(e != Element.PHYSICAL for e in char.elements)
     
     def play_card(self):
-        """打出卡牌"""
+        """
+        打出卡牌
+        根据规则III和IV实现完整的出牌逻辑
+        """
         if self.selected_hand_index < 0 or self.selected_actor_index < 0 or not self.selected_target:
             self.add_log("请选择手牌、角色和目标")
             return
@@ -1191,78 +1868,79 @@ class BattleScene(Scene):
         card = current_player.hand[self.selected_hand_index]
         actor = current_player.chars[self.selected_actor_index]
         
-        # 检查是否为物理牌
-        is_physical = Element.PHYSICAL in card.elements
-        actor_is_mage = self.is_mage(actor.character)
+        # 检查角色是否可以攻击（混乱状态）
+        if not actor.can_attack():
+            self.add_log(f"{actor.character.name} 处于混乱状态，无法攻击")
+            return
         
+        # 根据规则III：检查使用限制
+        is_physical = Element.PHYSICAL in card.elements
+        actor_is_mage = actor.character.is_mage()
+        
+        # 非物理属性牌只能由魔法师打出，具有物理属性的牌可以由普通人打出
         if not actor_is_mage and not is_physical:
             self.add_log("普通人只能使用物理属性的牌")
             return
         
-        # 计算费用
+        # 计算费用（物理牌无需消耗魔力）
         cost = 0 if is_physical else card.cost
-        remaining = cost
         
-        if actor_is_mage and cost > 0:
-            # 从角色能量支付
-            from_char = min(actor.cur_energy, remaining)
-            actor.cur_energy -= from_char
-            remaining -= from_char
+        # 检查是否可以支付费用
+        if cost > 0:
+            available_energy = actor.cur_energy if actor_is_mage else 0
+            available_mana = current_player.base_mana
+            total_available = available_energy + available_mana
             
-            # 从基地魔力支付
-            from_base = min(current_player.base_mana, remaining)
-            current_player.base_mana -= from_base
-            remaining -= from_base
+            if total_available < cost:
+                self.add_log(f"魔力不足，需要{cost}点，可用{total_available}点")
+                return
             
-            # 用生命支付剩余
-            if remaining > 0:
-                actor.cur_hp -= remaining
-                self.add_log(f"使用{remaining}点生命支付费用")
+            # 支付费用
+            if not current_player.pay_cost(cost, actor):
+                self.add_log("支付费用失败")
+                return
         
-        # 计算伤害
+        # 根据规则IV：计算伤害
+        # 基础伤害计算：技能（x2）-防御力
         base_dmg = max(1, card.cost)
+        
+        # 根据规则III：魔法师打出牌时，若牌的属性与魔法师属性相同，则将该牌造成的伤害×2
         element_match = any(e in actor.character.elements for e in card.elements)
-        final_dmg = base_dmg * (2 if element_match else 1)
+        final_dmg = base_dmg * (2 if (element_match and actor_is_mage) else 1)
         dmg_is_magic = not is_physical
         
         # 应用目标伤害
         if self.selected_target == "b":
+            # 直接攻击基地
             opponent.base_hp -= final_dmg
-            self.add_log(f"{actor.character.name} 使用 {card.name} 对基地造成 {final_dmg} 点伤害")
+            self.add_log(f"{actor.character.name} 使用 {card.name} 对基地造成 {final_dmg} 点{('魔法' if dmg_is_magic else '物理')}伤害")
         else:
-            target_idx = 0 if self.selected_target == "t0" else 1
+            target_idx = int(self.selected_target[1])  # 从"t0"或"t1"提取索引
             if target_idx < len(opponent.chars):
                 target = opponent.chars[target_idx]
                 
-                # 法师用能量抵消魔法伤害
-                if dmg_is_magic and self.is_mage(target.character):
-                    energy_absorbed = min(target.cur_energy, final_dmg)
-                    target.cur_energy -= energy_absorbed
-                    final_dmg -= energy_absorbed
+                # 使用角色状态的伤害计算方法（已实现规则IV-a和IV-b）
+                overflow = target.take_damage(final_dmg, dmg_is_magic, opponent)
                 
-                if final_dmg > 0:
-                    target.cur_hp -= final_dmg
+                self.add_log(f"{actor.character.name} 使用 {card.name} 对 {target.character.name} 造成 {final_dmg} 点{('魔法' if dmg_is_magic else '物理')}伤害")
                 
-                self.add_log(f"{actor.character.name} 使用 {card.name} 对 {target.character.name} 造成伤害")
+                if overflow > 0:
+                    opponent.base_hp -= overflow
+                    self.add_log(f"溢出伤害 {overflow} 点打到基地")
                 
                 # 检查角色死亡和替补
                 if target.cur_hp <= 0:
-                    overflow = -target.cur_hp
                     self.add_log(f"{target.character.name} 被击败！")
                     
-                    if len(opponent.chars) == 3:
-                        # 替补上场
-                        opponent.chars[target_idx] = opponent.chars[2]
-                        opponent.chars.pop()
-                        self.add_log(f"后场角色上场替补")
-                    else:
-                        target.cur_hp = 0
-                    
-                    if overflow > 0:
-                        opponent.base_hp -= overflow
-                        self.add_log(f"溢出伤害 {overflow} 点打到基地")
+                    # 检查是否有后场角色可以替补
+                    if opponent.has_reserve():
+                        reserve_char = opponent.get_reserve_char()
+                        if reserve_char.cur_hp > 0:
+                            opponent.chars[target_idx] = reserve_char
+                            opponent.chars.pop(2)
+                            self.add_log(f"后场角色 {reserve_char.character.name} 上场替补")
         
-        # 移除打出的卡牌
+        # 移除打出的卡牌到弃牌堆
         current_player.discard.append(current_player.hand.pop(self.selected_hand_index))
         self.selected_hand_index = -1
         self.selected_actor_index = -1
@@ -1334,6 +2012,114 @@ class BattleScene(Scene):
             title = self.font.render("无法开始对战，需要至少2个牌组", True, COLOR_TEXT)
             screen.blit(title, (SCREEN_WIDTH//2 - title.get_width()//2, 300))
             self.back_button.draw(screen)
+    
+    def draw_network_battle(self, screen: pygame.Surface):
+        """绘制网络战斗界面"""
+        if not self.local_player:
+            return
+        
+        # 显示对战信息
+        title = self.font_title.render(f"战斗: {self.player_name} vs {self.opponent_name}", 
+                                      True, COLOR_TEXT)
+        screen.blit(title, (SCREEN_WIDTH//2 - title.get_width()//2, 20))
+        
+        # 显示回合状态
+        turn_text = f"回合 {self.turn_number} - {'你的回合' if self.my_turn else '对方回合'}"
+        turn_color = (100, 255, 100) if self.my_turn else (255, 100, 100)
+        turn_surf = self.font.render(turn_text, True, turn_color)
+        screen.blit(turn_surf, (SCREEN_WIDTH//2 - turn_surf.get_width()//2, 60))
+        
+        # 绘制对手区域（简化显示）
+        if self.remote_player:
+            opponent_y = 100
+            opp_name_surf = self.font.render(f"{self.opponent_name}", True, COLOR_TEXT)
+            screen.blit(opp_name_surf, (50, opponent_y))
+            
+            opp_base_text = f"基地HP: {self.remote_player.base_hp} MP: {self.remote_player.base_mana}"
+            opp_base_surf = self.font_small.render(opp_base_text, True, COLOR_TEXT_DIM)
+            screen.blit(opp_base_surf, (50, opponent_y + 30))
+        
+        # 绘制己方区域
+        my_y = SCREEN_HEIGHT - 300
+        my_name_surf = self.font.render(f"{self.player_name}", True, COLOR_TEXT)
+        screen.blit(my_name_surf, (50, my_y))
+        
+        # 基地状态
+        base_text = f"基地HP: {self.local_player.base_hp} MP: {self.local_player.base_mana}"
+        base_surf = self.font_small.render(base_text, True, COLOR_TEXT)
+        screen.blit(base_surf, (50, my_y + 30))
+        
+        # 绘制己方角色
+        for i, char_state in enumerate(self.local_player.chars[:2]):
+            char_x = 50 + i * 200
+            char_rect = pygame.Rect(char_x, my_y + 60, 180, 120)
+            
+            # 高亮选中的角色
+            if i == self.selected_actor_index:
+                pygame.draw.rect(screen, (100, 255, 100), char_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, char_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, char_rect, 2, border_radius=8)
+            
+            # 角色名
+            name = self.font_small.render(char_state.character.name, True, COLOR_TEXT)
+            screen.blit(name, (char_x + 10, my_y + 70))
+            
+            # HP条
+            hp_ratio = max(0, char_state.cur_hp / char_state.character.health)
+            hp_bar_rect = pygame.Rect(char_x + 10, my_y + 100, 160, 15)
+            pygame.draw.rect(screen, (50, 50, 50), hp_bar_rect)
+            hp_fill_rect = pygame.Rect(char_x + 10, my_y + 100, int(160 * hp_ratio), 15)
+            pygame.draw.rect(screen, COLOR_HP_BAR, hp_fill_rect)
+            hp_text = self.font_tiny.render(f"{char_state.cur_hp}/{char_state.character.health}", 
+                                          True, COLOR_TEXT)
+            screen.blit(hp_text, (char_x + 15, my_y + 102))
+            
+            # MP条
+            if char_state.character.is_mage():
+                mp_ratio = max(0, char_state.cur_energy / char_state.character.energy) if char_state.character.energy > 0 else 0
+                mp_bar_rect = pygame.Rect(char_x + 10, my_y + 120, 160, 15)
+                pygame.draw.rect(screen, (30, 30, 30), mp_bar_rect)
+                mp_fill_rect = pygame.Rect(char_x + 10, my_y + 120, int(160 * mp_ratio), 15)
+                pygame.draw.rect(screen, COLOR_ENERGY_BAR, mp_fill_rect)
+                mp_text = self.font_tiny.render(f"MP:{char_state.cur_energy}/{char_state.character.energy}",
+                                              True, COLOR_TEXT)
+                screen.blit(mp_text, (char_x + 15, my_y + 122))
+        
+        # 绘制手牌
+        hand_y = SCREEN_HEIGHT - 140
+        for i, card in enumerate(self.local_player.hand):
+            x = 50 + i * 130
+            card_rect = pygame.Rect(x, hand_y, 120, 100)
+            
+            # 高亮选中的牌
+            if i == self.selected_hand_index:
+                pygame.draw.rect(screen, (255, 255, 100), card_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, card_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, card_rect, 2, border_radius=8)
+            
+            name_surf = self.font_tiny.render(card.name[:10], True, COLOR_TEXT)
+            cost_surf = self.font_small.render(str(card.cost), True, COLOR_MANA_BAR)
+            screen.blit(name_surf, (x + 5, hand_y + 5))
+            screen.blit(cost_surf, (x + 5, hand_y + 25))
+        
+        # 绘制战斗日志
+        log_y = 200
+        for log in self.battle_log[-8:]:
+            log_surf = self.font_tiny.render(log, True, COLOR_TEXT_DIM)
+            screen.blit(log_surf, (SCREEN_WIDTH - 450, log_y))
+            log_y += 18
+        
+        # 按钮
+        self.back_button.draw(screen)
+        if self.my_turn and self.network_battle_started:
+            self.end_turn_button.draw(screen)
+            self.play_card_button.draw(screen)
+            
+            hint = self.font_small.render("选择手牌、角色和目标后点击出牌 | 1-3键发送表情", 
+                                         True, COLOR_TEXT_DIM)
+            screen.blit(hint, (SCREEN_WIDTH//2 - hint.get_width()//2, SCREEN_HEIGHT - 100))
             return
         
         current_player = self.player1 if self.current_turn == 0 else self.player2
@@ -1377,6 +2163,114 @@ class BattleScene(Scene):
         
         # 按钮
         self.back_button.draw(screen)
+    
+    def draw_network_battle(self, screen: pygame.Surface):
+        """绘制网络战斗界面"""
+        if not self.local_player:
+            return
+        
+        # 显示对战信息
+        title = self.font_title.render(f"战斗: {self.player_name} vs {self.opponent_name}", 
+                                      True, COLOR_TEXT)
+        screen.blit(title, (SCREEN_WIDTH//2 - title.get_width()//2, 20))
+        
+        # 显示回合状态
+        turn_text = f"回合 {self.turn_number} - {'你的回合' if self.my_turn else '对方回合'}"
+        turn_color = (100, 255, 100) if self.my_turn else (255, 100, 100)
+        turn_surf = self.font.render(turn_text, True, turn_color)
+        screen.blit(turn_surf, (SCREEN_WIDTH//2 - turn_surf.get_width()//2, 60))
+        
+        # 绘制对手区域（简化显示）
+        if self.remote_player:
+            opponent_y = 100
+            opp_name_surf = self.font.render(f"{self.opponent_name}", True, COLOR_TEXT)
+            screen.blit(opp_name_surf, (50, opponent_y))
+            
+            opp_base_text = f"基地HP: {self.remote_player.base_hp} MP: {self.remote_player.base_mana}"
+            opp_base_surf = self.font_small.render(opp_base_text, True, COLOR_TEXT_DIM)
+            screen.blit(opp_base_surf, (50, opponent_y + 30))
+        
+        # 绘制己方区域
+        my_y = SCREEN_HEIGHT - 300
+        my_name_surf = self.font.render(f"{self.player_name}", True, COLOR_TEXT)
+        screen.blit(my_name_surf, (50, my_y))
+        
+        # 基地状态
+        base_text = f"基地HP: {self.local_player.base_hp} MP: {self.local_player.base_mana}"
+        base_surf = self.font_small.render(base_text, True, COLOR_TEXT)
+        screen.blit(base_surf, (50, my_y + 30))
+        
+        # 绘制己方角色
+        for i, char_state in enumerate(self.local_player.chars[:2]):
+            char_x = 50 + i * 200
+            char_rect = pygame.Rect(char_x, my_y + 60, 180, 120)
+            
+            # 高亮选中的角色
+            if i == self.selected_actor_index:
+                pygame.draw.rect(screen, (100, 255, 100), char_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, char_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, char_rect, 2, border_radius=8)
+            
+            # 角色名
+            name = self.font_small.render(char_state.character.name, True, COLOR_TEXT)
+            screen.blit(name, (char_x + 10, my_y + 70))
+            
+            # HP条
+            hp_ratio = max(0, char_state.cur_hp / char_state.character.health)
+            hp_bar_rect = pygame.Rect(char_x + 10, my_y + 100, 160, 15)
+            pygame.draw.rect(screen, (50, 50, 50), hp_bar_rect)
+            hp_fill_rect = pygame.Rect(char_x + 10, my_y + 100, int(160 * hp_ratio), 15)
+            pygame.draw.rect(screen, COLOR_HP_BAR, hp_fill_rect)
+            hp_text = self.font_tiny.render(f"{char_state.cur_hp}/{char_state.character.health}", 
+                                          True, COLOR_TEXT)
+            screen.blit(hp_text, (char_x + 15, my_y + 102))
+            
+            # MP条
+            if char_state.character.is_mage():
+                mp_ratio = max(0, char_state.cur_energy / char_state.character.energy) if char_state.character.energy > 0 else 0
+                mp_bar_rect = pygame.Rect(char_x + 10, my_y + 120, 160, 15)
+                pygame.draw.rect(screen, (30, 30, 30), mp_bar_rect)
+                mp_fill_rect = pygame.Rect(char_x + 10, my_y + 120, int(160 * mp_ratio), 15)
+                pygame.draw.rect(screen, COLOR_ENERGY_BAR, mp_fill_rect)
+                mp_text = self.font_tiny.render(f"MP:{char_state.cur_energy}/{char_state.character.energy}",
+                                              True, COLOR_TEXT)
+                screen.blit(mp_text, (char_x + 15, my_y + 122))
+        
+        # 绘制手牌
+        hand_y = SCREEN_HEIGHT - 140
+        for i, card in enumerate(self.local_player.hand):
+            x = 50 + i * 130
+            card_rect = pygame.Rect(x, hand_y, 120, 100)
+            
+            # 高亮选中的牌
+            if i == self.selected_hand_index:
+                pygame.draw.rect(screen, (255, 255, 100), card_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, card_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, card_rect, 2, border_radius=8)
+            
+            name_surf = self.font_tiny.render(card.name[:10], True, COLOR_TEXT)
+            cost_surf = self.font_small.render(str(card.cost), True, COLOR_MANA_BAR)
+            screen.blit(name_surf, (x + 5, hand_y + 5))
+            screen.blit(cost_surf, (x + 5, hand_y + 25))
+        
+        # 绘制战斗日志
+        log_y = 200
+        for log in self.battle_log[-8:]:
+            log_surf = self.font_tiny.render(log, True, COLOR_TEXT_DIM)
+            screen.blit(log_surf, (SCREEN_WIDTH - 450, log_y))
+            log_y += 18
+        
+        # 按钮
+        self.back_button.draw(screen)
+        if self.my_turn and self.network_battle_started:
+            self.end_turn_button.draw(screen)
+            self.play_card_button.draw(screen)
+            
+            hint = self.font_small.render("选择手牌、角色和目标后点击出牌 | 1-3键发送表情", 
+                                         True, COLOR_TEXT_DIM)
+            screen.blit(hint, (SCREEN_WIDTH//2 - hint.get_width()//2, SCREEN_HEIGHT - 100))
         self.end_turn_button.draw(screen)
         
         # 打出卡牌按钮
@@ -1478,6 +2372,11 @@ class NetworkLobbyScene(Scene):
         self.remote_player: Optional[PlayerBattleState] = None
         self.battle_log = []
         self.my_turn = False
+        self.turn_number = 1
+        self.selected_hand_index = -1
+        self.selected_actor_index = -1
+        self.selected_target = None
+        self.network_battle_started = False
         
         self.back_button = Button(20, 20, 100, 40, "返回",
                                   callback=self.disconnect)
@@ -1487,6 +2386,12 @@ class NetworkLobbyScene(Scene):
                                     callback=lambda: self.select_mode("client"))
         self.connect_button = Button(SCREEN_WIDTH//2 - 100, 450, 200, 50, "连接",
                                      callback=self.start_connection)
+        self.start_battle_button = Button(SCREEN_WIDTH//2 - 100, 500, 200, 50, "开始战斗",
+                                          callback=self.start_network_battle)
+        self.end_turn_button = Button(SCREEN_WIDTH - 220, SCREEN_HEIGHT - 60, 200, 40, "结束回合",
+                                      callback=self.network_end_turn)
+        self.play_card_button = Button(SCREEN_WIDTH - 440, SCREEN_HEIGHT - 60, 200, 40, "打出卡牌",
+                                       callback=self.network_play_card)
     
     def select_mode(self, mode: str):
         self.mode = mode
@@ -1551,6 +2456,14 @@ class NetworkLobbyScene(Scene):
             self.stage = 3
             self.add_log(f"已连接: {self.opponent_name}")
             
+            # 如果是主机，发送牌组信息并准备战斗
+            if self.mode == "host":
+                if len(self.game.decks) > 0:
+                    deck = self.game.decks[0]  # 使用第一个牌组
+                    deck_info = f"{deck.name};{deck.deck_code}"
+                    self._send_message(f"DECK;{deck_info}")
+                    self.add_log("已发送牌组信息")
+            
         except Exception as e:
             self.add_log(f"连接失败: {e}")
             self.stage = 1
@@ -1606,6 +2519,124 @@ class NetworkLobbyScene(Scene):
         """发送表情"""
         self._send_message(f"EMOJI;{emoji}")
     
+    def start_network_battle(self):
+        """开始网络战斗"""
+        if len(self.game.decks) == 0:
+            self.add_log("请先创建牌组")
+            return
+        
+        # 创建本地玩家状态
+        deck = self.game.decks[0]  # 使用第一个牌组
+        self.local_player = PlayerBattleState(self.player_name)
+        
+        # 初始化角色
+        for char in deck.characters[:3]:
+            initial_energy = (char.energy + 1) // 2 if char.is_mage() else 0
+            cs = CharacterState(char, char.health, initial_energy)
+            self.local_player.chars.append(cs)
+        
+        # 初始化牌库
+        self.local_player.deck = deck.cards.copy()
+        random.shuffle(self.local_player.deck)
+        
+        # 抽初始手牌
+        for _ in range(3):
+            if self.local_player.deck:
+                self.local_player.hand.append(self.local_player.deck.pop(0))
+        
+        # 标记战斗开始
+        self.network_battle_started = True
+        self.stage = 4  # 进入战斗阶段
+        
+        self.add_log("网络战斗开始！")
+        self.add_log(f"你使用牌组: {deck.name}")
+        
+        # 通知对方开始战斗
+        self._send_message("STARTBATTLE")
+        
+        # 如果是主机，开始第一回合
+        if self.my_turn:
+            self.local_player.start_turn()
+            self.add_log("你的回合开始")
+    
+    def network_end_turn(self):
+        """网络战斗结束回合"""
+        if not self.network_battle_started or not self.my_turn:
+            return
+        
+        self._send_message("ENDTURN")
+        self.my_turn = False
+        self.add_log("已结束回合，等待对手...")
+    
+    def network_play_card(self):
+        """网络战斗出牌"""
+        if not self.network_battle_started or not self.my_turn:
+            return
+        
+        if self.selected_hand_index < 0 or self.selected_actor_index < 0 or not self.selected_target:
+            self.add_log("请选择手牌、角色和目标")
+            return
+        
+        card = self.local_player.hand[self.selected_hand_index]
+        actor = self.local_player.chars[self.selected_actor_index]
+        
+        # 检查使用限制
+        is_physical = Element.PHYSICAL in card.elements
+        actor_is_mage = actor.character.is_mage()
+        
+        if not actor_is_mage and not is_physical:
+            self.add_log("普通人只能使用物理属性的牌")
+            return
+        
+        # 计算费用
+        cost = 0 if is_physical else card.cost
+        total_available = (actor.cur_energy if actor_is_mage else 0) + self.local_player.base_mana
+        
+        if total_available < cost:
+            self.add_log(f"魔力不足，需要{cost}点，可用{total_available}点")
+            return
+        
+        # 发送出牌消息
+        self._send_message(f"PLAY;{card.id};{self.selected_actor_index};{self.selected_target}")
+        
+        # 本地执行出牌逻辑
+        self.execute_play_card(self.selected_hand_index, self.selected_actor_index, self.selected_target)
+        
+        self.add_log(f"使用 {card.name}")
+        
+        # 清除选择
+        self.selected_hand_index = -1
+        self.selected_actor_index = -1
+        self.selected_target = None
+    
+    def execute_play_card(self, hand_idx: int, actor_idx: int, target: str):
+        """执行出牌逻辑"""
+        if not self.local_player:
+            return
+        
+        card = self.local_player.hand[hand_idx]
+        actor = self.local_player.chars[actor_idx]
+        
+        # 支付费用
+        is_physical = Element.PHYSICAL in card.elements
+        cost = 0 if is_physical else card.cost
+        
+        if cost > 0:
+            self.local_player.pay_cost(cost, actor)
+        
+        # 计算伤害
+        base_dmg = max(1, card.cost)
+        element_match = any(e in actor.character.elements for e in card.elements)
+        final_dmg = base_dmg * (2 if (element_match and actor.character.is_mage) else 1)
+        
+        # 这里需要对方的状态来应用伤害
+        # 暂时只记录日志
+        dmg_is_magic = not is_physical
+        self.add_log(f"造成 {final_dmg} 点{('魔法' if dmg_is_magic else '物理')}伤害")
+        
+        # 移除卡牌
+        self.local_player.discard.append(self.local_player.hand.pop(hand_idx))
+    
     def end_turn(self):
         """结束回合"""
         self._send_message("ENDTURN")
@@ -1622,19 +2653,81 @@ class NetworkLobbyScene(Scene):
                 break
     
     def handle_message(self, msg: str):
-        """处理消息"""
+        """处理网络消息，实现局域网对战"""
         if msg.startswith("NAME;"):
             self.opponent_name = msg.split(';', 1)[1]
+            self.add_log(f"对手 {self.opponent_name} 已连接")
         elif msg.startswith("EMOJI;"):
             emoji = msg.split(';', 1)[1]
             self.add_log(f"[对方表情] {emoji}")
         elif msg.startswith("PLAY;"):
             parts = msg.split(';')
             if len(parts) >= 4:
-                self.add_log(f"对方出了一张牌")
+                card_id = parts[1]
+                actor_idx = int(parts[2])
+                target = parts[3]
+                self.add_log(f"对方使用卡牌: {card_id} -> {target}")
+                # 实现对方出牌的逻辑同步
+                self.handle_opponent_play(card_id, actor_idx, target)
+        elif msg.startswith("DECK;"):
+            # 接收对方的牌组信息
+            deck_data = msg.split(';', 1)[1]
+            self.add_log(f"收到对方牌组: {deck_data}")
+            # 如果是客户端，回应发送自己的牌组信息
+            if self.mode == "client" and len(self.game.decks) > 0:
+                deck = self.game.decks[0]
+                deck_info = f"{deck.name};{deck.deck_code}"
+                self._send_message(f"DECK;{deck_info}")
+                self.add_log("已发送我的牌组信息")
+        elif msg.startswith("STARTBATTLE"):
+            # 开始战斗
+            self.add_log("对手开始战斗！")
+            self.prepare_opponent_battle()
+            self.stage = 4  # 进入战斗阶段
         elif msg == "ENDTURN":
             self.my_turn = True
             self.add_log("对方结束回合，轮到你了")
+            if self.local_player:
+                self.local_player.start_turn()
+                self.add_log("你的回合开始")
+        elif msg.startswith("ABILITY;"):
+            # 使用专属技能
+            parts = msg.split(';')
+            if len(parts) >= 3:
+                char_id = parts[1]
+                target = parts[2]
+                self.add_log(f"对方使用专属技能: {char_id} -> {target}")
+        elif msg.startswith("STATUS;"):
+            # 状态同步
+            status_data = msg.split(';', 1)[1]
+            self.add_log(f"状态更新: {status_data}")
+    
+    def handle_opponent_play(self, card_id: str, actor_idx: int, target: str):
+        """处理对手出牌"""
+        # 这里需要实现对手出牌的完整逻辑
+        # 包括验证、费用支付、伤害计算等
+        self.add_log(f"对手出牌: 卡牌{card_id}，角色{actor_idx}，目标{target}")
+        
+        # 创建一个临时的对手玩家状态来模拟出牌
+        if not self.remote_player:
+            return
+        
+        # 根据card_id找到卡牌（需要从对方的牌组中查找）
+        # 这里简化处理，只记录日志
+        self.add_log("正在处理对手出牌...")
+    
+    def prepare_opponent_battle(self):
+        """准备对手战斗状态"""
+        # 创建远程玩家状态（简化版本）
+        self.remote_player = PlayerBattleState(self.opponent_name)
+        
+        # 这里应该解析对方的牌组信息并初始化角色
+        # 暂时使用默认设置
+        self.add_log("准备对手战斗状态完成")
+        
+        if not self.local_player:
+            # 如果本地玩家还没准备，先准备
+            self.start_network_battle()
     
     def handle_event(self, event: pygame.event.Event):
         self.back_button.handle_event(event)
@@ -1684,7 +2777,8 @@ class NetworkLobbyScene(Scene):
             
             self.connect_button.handle_event(event)
         
-        elif self.stage == 3:  # 已连接
+        elif self.stage == 3:  # 已连接，等待开始战斗
+            self.start_battle_button.handle_event(event)
             if event.type == pygame.KEYDOWN:
                 # 快捷键发送表情
                 if event.key == pygame.K_1:
@@ -1693,12 +2787,75 @@ class NetworkLobbyScene(Scene):
                     self.send_emoji("😎")
                 elif event.key == pygame.K_3:
                     self.send_emoji("😢")
-                elif event.key == pygame.K_SPACE:
-                    if self.my_turn:
-                        self.end_turn()
+        
+        elif self.stage == 4:  # 网络战斗进行中
+            self.handle_network_battle_event(event)
+    
+    def handle_network_battle_event(self, event: pygame.event.Event):
+        """处理网络战斗事件"""
+        if not self.my_turn or not self.network_battle_started:
+            # 只允许表情和返回
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    self.send_emoji("😀")
+                elif event.key == pygame.K_2:
+                    self.send_emoji("😎")
+                elif event.key == pygame.K_3:
+                    self.send_emoji("😢")
+            self.back_button.handle_event(event)
+            return
+        
+        # 我的回合，允许所有操作
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            mouse_pos = event.pos
+            
+            # 选择手牌
+            hand_y = SCREEN_HEIGHT - 140
+            for i, card in enumerate(self.local_player.hand):
+                card_rect = pygame.Rect(50 + i * 130, hand_y, 120, 100)
+                if card_rect.collidepoint(mouse_pos):
+                    self.selected_hand_index = i
+                    self.add_log(f"选择了 {card.name}")
+                    return
+            
+            # 选择己方角色
+            my_y = SCREEN_HEIGHT - 300
+            for i in range(min(2, len(self.local_player.chars))):
+                char_rect = pygame.Rect(50 + i * 200, my_y + 60, 180, 120)
+                if char_rect.collidepoint(mouse_pos):
+                    self.selected_actor_index = i
+                    self.add_log(f"选择角色 {self.local_player.chars[i].character.name}")
+                    return
+            
+            # 选择对手基地（简化处理）
+            base_rect = pygame.Rect(SCREEN_WIDTH - 250, 100, 200, 80)
+            if base_rect.collidepoint(mouse_pos):
+                self.selected_target = "b"
+                self.add_log("目标: 对手基地")
+                return
+            
+            # 选择对手角色（简化处理，选择第一个角色）
+            if 100 < mouse_pos[1] < 200 and 250 < mouse_pos[0] < 430:
+                self.selected_target = "t0"
+                self.add_log("目标: 对手角色")
+                return
+        
+        elif event.type == pygame.KEYDOWN:
+            # 快捷键
+            if event.key == pygame.K_1:
+                self.send_emoji("😀")
+            elif event.key == pygame.K_2:
+                self.send_emoji("😎")
+            elif event.key == pygame.K_3:
+                self.send_emoji("😢")
+        
+        # 通用按钮处理
+        self.back_button.handle_event(event)
+        self.end_turn_button.handle_event(event)
+        self.play_card_button.handle_event(event)
     
     def update(self, dt: float):
-        if self.stage == 3:
+        if self.stage >= 3:  # 在连接后和战斗中都要处理消息
             self.process_messages()
     
     def draw(self, screen: pygame.Surface):
@@ -1765,16 +2922,15 @@ class NetworkLobbyScene(Scene):
             title = self.font_title.render("连接中...", True, COLOR_TEXT)
             screen.blit(title, (SCREEN_WIDTH//2 - title.get_width()//2, 300))
         
-        elif self.stage == 3:  # 已连接
+        elif self.stage == 3:  # 已连接，等待开始战斗
             # 显示对战信息
             title = self.font_title.render(f"对战: {self.player_name} vs {self.opponent_name}", 
                                           True, COLOR_TEXT)
             screen.blit(title, (SCREEN_WIDTH//2 - title.get_width()//2, 50))
             
-            # 显示回合状态
-            turn_text = "你的回合" if self.my_turn else "对方回合"
-            turn_color = (100, 255, 100) if self.my_turn else (255, 100, 100)
-            turn_surf = self.font.render(turn_text, True, turn_color)
+            # 显示连接状态
+            turn_text = "等待开始战斗..."
+            turn_surf = self.font.render(turn_text, True, COLOR_TEXT_DIM)
             screen.blit(turn_surf, (SCREEN_WIDTH//2 - turn_surf.get_width()//2, 120))
             
             # 显示日志
@@ -1784,13 +2940,129 @@ class NetworkLobbyScene(Scene):
                 screen.blit(log_surf, (100, log_y))
                 log_y += 25
             
-            # 显示操作提示
-            if self.my_turn:
-                hint = self.font_small.render("按空格键结束回合 | 1-3键发送表情", 
+            # 显示开始战斗按钮（如果是主机）
+            if self.mode == "host":
+                self.start_battle_button.draw(screen)
+                hint = self.font_small.render("点击按钮开始战斗 | 1-3键发送表情", 
+                                             True, COLOR_TEXT_DIM)
+                screen.blit(hint, (SCREEN_WIDTH//2 - hint.get_width()//2, SCREEN_HEIGHT - 100))
+            else:
+                hint = self.font_small.render("等待主机开始战斗 | 1-3键发送表情", 
                                              True, COLOR_TEXT_DIM)
                 screen.blit(hint, (SCREEN_WIDTH//2 - hint.get_width()//2, SCREEN_HEIGHT - 100))
         
+        elif self.stage == 4:  # 网络战斗进行中
+            self.draw_network_battle(screen)
+        
         self.back_button.draw(screen)
+    
+    def draw_network_battle(self, screen: pygame.Surface):
+        """绘制网络战斗界面"""
+        if not self.local_player:
+            return
+        
+        # 显示对战信息
+        title = self.font_title.render(f"战斗: {self.player_name} vs {self.opponent_name}", 
+                                      True, COLOR_TEXT)
+        screen.blit(title, (SCREEN_WIDTH//2 - title.get_width()//2, 20))
+        
+        # 显示回合状态
+        turn_text = f"回合 {self.turn_number} - {'你的回合' if self.my_turn else '对方回合'}"
+        turn_color = (100, 255, 100) if self.my_turn else (255, 100, 100)
+        turn_surf = self.font.render(turn_text, True, turn_color)
+        screen.blit(turn_surf, (SCREEN_WIDTH//2 - turn_surf.get_width()//2, 60))
+        
+        # 绘制对手区域（简化显示）
+        if self.remote_player:
+            opponent_y = 100
+            opp_name_surf = self.font.render(f"{self.opponent_name}", True, COLOR_TEXT)
+            screen.blit(opp_name_surf, (50, opponent_y))
+            
+            opp_base_text = f"基地HP: {self.remote_player.base_hp} MP: {self.remote_player.base_mana}"
+            opp_base_surf = self.font_small.render(opp_base_text, True, COLOR_TEXT_DIM)
+            screen.blit(opp_base_surf, (50, opponent_y + 30))
+        
+        # 绘制己方区域
+        my_y = SCREEN_HEIGHT - 300
+        my_name_surf = self.font.render(f"{self.player_name}", True, COLOR_TEXT)
+        screen.blit(my_name_surf, (50, my_y))
+        
+        # 基地状态
+        base_text = f"基地HP: {self.local_player.base_hp} MP: {self.local_player.base_mana}"
+        base_surf = self.font_small.render(base_text, True, COLOR_TEXT)
+        screen.blit(base_surf, (50, my_y + 30))
+        
+        # 绘制己方角色
+        for i, char_state in enumerate(self.local_player.chars[:2]):
+            char_x = 50 + i * 200
+            char_rect = pygame.Rect(char_x, my_y + 60, 180, 120)
+            
+            # 高亮选中的角色
+            if i == self.selected_actor_index:
+                pygame.draw.rect(screen, (100, 255, 100), char_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, char_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, char_rect, 2, border_radius=8)
+            
+            # 角色名
+            name = self.font_small.render(char_state.character.name, True, COLOR_TEXT)
+            screen.blit(name, (char_x + 10, my_y + 70))
+            
+            # HP条
+            hp_ratio = max(0, char_state.cur_hp / char_state.character.health)
+            hp_bar_rect = pygame.Rect(char_x + 10, my_y + 100, 160, 15)
+            pygame.draw.rect(screen, (50, 50, 50), hp_bar_rect)
+            hp_fill_rect = pygame.Rect(char_x + 10, my_y + 100, int(160 * hp_ratio), 15)
+            pygame.draw.rect(screen, COLOR_HP_BAR, hp_fill_rect)
+            hp_text = self.font_tiny.render(f"{char_state.cur_hp}/{char_state.character.health}", 
+                                          True, COLOR_TEXT)
+            screen.blit(hp_text, (char_x + 15, my_y + 102))
+            
+            # MP条
+            if char_state.character.is_mage():
+                mp_ratio = max(0, char_state.cur_energy / char_state.character.energy) if char_state.character.energy > 0 else 0
+                mp_bar_rect = pygame.Rect(char_x + 10, my_y + 120, 160, 15)
+                pygame.draw.rect(screen, (30, 30, 30), mp_bar_rect)
+                mp_fill_rect = pygame.Rect(char_x + 10, my_y + 120, int(160 * mp_ratio), 15)
+                pygame.draw.rect(screen, COLOR_ENERGY_BAR, mp_fill_rect)
+                mp_text = self.font_tiny.render(f"MP:{char_state.cur_energy}/{char_state.character.energy}",
+                                              True, COLOR_TEXT)
+                screen.blit(mp_text, (char_x + 15, my_y + 122))
+        
+        # 绘制手牌
+        hand_y = SCREEN_HEIGHT - 140
+        for i, card in enumerate(self.local_player.hand):
+            x = 50 + i * 130
+            card_rect = pygame.Rect(x, hand_y, 120, 100)
+            
+            # 高亮选中的牌
+            if i == self.selected_hand_index:
+                pygame.draw.rect(screen, (255, 255, 100), card_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, card_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, card_rect, 2, border_radius=8)
+            
+            name_surf = self.font_tiny.render(card.name[:10], True, COLOR_TEXT)
+            cost_surf = self.font_small.render(str(card.cost), True, COLOR_MANA_BAR)
+            screen.blit(name_surf, (x + 5, hand_y + 5))
+            screen.blit(cost_surf, (x + 5, hand_y + 25))
+        
+        # 绘制战斗日志
+        log_y = 200
+        for log in self.battle_log[-8:]:
+            log_surf = self.font_tiny.render(log, True, COLOR_TEXT_DIM)
+            screen.blit(log_surf, (SCREEN_WIDTH - 450, log_y))
+            log_y += 18
+        
+        # 按钮
+        self.back_button.draw(screen)
+        if self.my_turn and self.network_battle_started:
+            self.end_turn_button.draw(screen)
+            self.play_card_button.draw(screen)
+            
+            hint = self.font_small.render("选择手牌、角色和目标后点击出牌 | 1-3键发送表情", 
+                                         True, COLOR_TEXT_DIM)
+            screen.blit(hint, (SCREEN_WIDTH//2 - hint.get_width()//2, SCREEN_HEIGHT - 100))
 
 class DeckDetailScene(Scene):
     """牌组详情场景"""
@@ -1820,6 +3092,114 @@ class DeckDetailScene(Scene):
             text = self.font.render("未找到牌组", True, COLOR_TEXT)
             screen.blit(text, (SCREEN_WIDTH//2 - text.get_width()//2, 300))
             self.back_button.draw(screen)
+    
+    def draw_network_battle(self, screen: pygame.Surface):
+        """绘制网络战斗界面"""
+        if not self.local_player:
+            return
+        
+        # 显示对战信息
+        title = self.font_title.render(f"战斗: {self.player_name} vs {self.opponent_name}", 
+                                      True, COLOR_TEXT)
+        screen.blit(title, (SCREEN_WIDTH//2 - title.get_width()//2, 20))
+        
+        # 显示回合状态
+        turn_text = f"回合 {self.turn_number} - {'你的回合' if self.my_turn else '对方回合'}"
+        turn_color = (100, 255, 100) if self.my_turn else (255, 100, 100)
+        turn_surf = self.font.render(turn_text, True, turn_color)
+        screen.blit(turn_surf, (SCREEN_WIDTH//2 - turn_surf.get_width()//2, 60))
+        
+        # 绘制对手区域（简化显示）
+        if self.remote_player:
+            opponent_y = 100
+            opp_name_surf = self.font.render(f"{self.opponent_name}", True, COLOR_TEXT)
+            screen.blit(opp_name_surf, (50, opponent_y))
+            
+            opp_base_text = f"基地HP: {self.remote_player.base_hp} MP: {self.remote_player.base_mana}"
+            opp_base_surf = self.font_small.render(opp_base_text, True, COLOR_TEXT_DIM)
+            screen.blit(opp_base_surf, (50, opponent_y + 30))
+        
+        # 绘制己方区域
+        my_y = SCREEN_HEIGHT - 300
+        my_name_surf = self.font.render(f"{self.player_name}", True, COLOR_TEXT)
+        screen.blit(my_name_surf, (50, my_y))
+        
+        # 基地状态
+        base_text = f"基地HP: {self.local_player.base_hp} MP: {self.local_player.base_mana}"
+        base_surf = self.font_small.render(base_text, True, COLOR_TEXT)
+        screen.blit(base_surf, (50, my_y + 30))
+        
+        # 绘制己方角色
+        for i, char_state in enumerate(self.local_player.chars[:2]):
+            char_x = 50 + i * 200
+            char_rect = pygame.Rect(char_x, my_y + 60, 180, 120)
+            
+            # 高亮选中的角色
+            if i == self.selected_actor_index:
+                pygame.draw.rect(screen, (100, 255, 100), char_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, char_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, char_rect, 2, border_radius=8)
+            
+            # 角色名
+            name = self.font_small.render(char_state.character.name, True, COLOR_TEXT)
+            screen.blit(name, (char_x + 10, my_y + 70))
+            
+            # HP条
+            hp_ratio = max(0, char_state.cur_hp / char_state.character.health)
+            hp_bar_rect = pygame.Rect(char_x + 10, my_y + 100, 160, 15)
+            pygame.draw.rect(screen, (50, 50, 50), hp_bar_rect)
+            hp_fill_rect = pygame.Rect(char_x + 10, my_y + 100, int(160 * hp_ratio), 15)
+            pygame.draw.rect(screen, COLOR_HP_BAR, hp_fill_rect)
+            hp_text = self.font_tiny.render(f"{char_state.cur_hp}/{char_state.character.health}", 
+                                          True, COLOR_TEXT)
+            screen.blit(hp_text, (char_x + 15, my_y + 102))
+            
+            # MP条
+            if char_state.character.is_mage():
+                mp_ratio = max(0, char_state.cur_energy / char_state.character.energy) if char_state.character.energy > 0 else 0
+                mp_bar_rect = pygame.Rect(char_x + 10, my_y + 120, 160, 15)
+                pygame.draw.rect(screen, (30, 30, 30), mp_bar_rect)
+                mp_fill_rect = pygame.Rect(char_x + 10, my_y + 120, int(160 * mp_ratio), 15)
+                pygame.draw.rect(screen, COLOR_ENERGY_BAR, mp_fill_rect)
+                mp_text = self.font_tiny.render(f"MP:{char_state.cur_energy}/{char_state.character.energy}",
+                                              True, COLOR_TEXT)
+                screen.blit(mp_text, (char_x + 15, my_y + 122))
+        
+        # 绘制手牌
+        hand_y = SCREEN_HEIGHT - 140
+        for i, card in enumerate(self.local_player.hand):
+            x = 50 + i * 130
+            card_rect = pygame.Rect(x, hand_y, 120, 100)
+            
+            # 高亮选中的牌
+            if i == self.selected_hand_index:
+                pygame.draw.rect(screen, (255, 255, 100), card_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, card_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, card_rect, 2, border_radius=8)
+            
+            name_surf = self.font_tiny.render(card.name[:10], True, COLOR_TEXT)
+            cost_surf = self.font_small.render(str(card.cost), True, COLOR_MANA_BAR)
+            screen.blit(name_surf, (x + 5, hand_y + 5))
+            screen.blit(cost_surf, (x + 5, hand_y + 25))
+        
+        # 绘制战斗日志
+        log_y = 200
+        for log in self.battle_log[-8:]:
+            log_surf = self.font_tiny.render(log, True, COLOR_TEXT_DIM)
+            screen.blit(log_surf, (SCREEN_WIDTH - 450, log_y))
+            log_y += 18
+        
+        # 按钮
+        self.back_button.draw(screen)
+        if self.my_turn and self.network_battle_started:
+            self.end_turn_button.draw(screen)
+            self.play_card_button.draw(screen)
+            
+            hint = self.font_small.render("选择手牌、角色和目标后点击出牌 | 1-3键发送表情", 
+                                         True, COLOR_TEXT_DIM)
+            screen.blit(hint, (SCREEN_WIDTH//2 - hint.get_width()//2, SCREEN_HEIGHT - 100))
             return
         
         y = 80 - self.scroll_offset
@@ -1900,6 +3280,114 @@ class DeckDetailScene(Scene):
                 y += 25
         
         self.back_button.draw(screen)
+    
+    def draw_network_battle(self, screen: pygame.Surface):
+        """绘制网络战斗界面"""
+        if not self.local_player:
+            return
+        
+        # 显示对战信息
+        title = self.font_title.render(f"战斗: {self.player_name} vs {self.opponent_name}", 
+                                      True, COLOR_TEXT)
+        screen.blit(title, (SCREEN_WIDTH//2 - title.get_width()//2, 20))
+        
+        # 显示回合状态
+        turn_text = f"回合 {self.turn_number} - {'你的回合' if self.my_turn else '对方回合'}"
+        turn_color = (100, 255, 100) if self.my_turn else (255, 100, 100)
+        turn_surf = self.font.render(turn_text, True, turn_color)
+        screen.blit(turn_surf, (SCREEN_WIDTH//2 - turn_surf.get_width()//2, 60))
+        
+        # 绘制对手区域（简化显示）
+        if self.remote_player:
+            opponent_y = 100
+            opp_name_surf = self.font.render(f"{self.opponent_name}", True, COLOR_TEXT)
+            screen.blit(opp_name_surf, (50, opponent_y))
+            
+            opp_base_text = f"基地HP: {self.remote_player.base_hp} MP: {self.remote_player.base_mana}"
+            opp_base_surf = self.font_small.render(opp_base_text, True, COLOR_TEXT_DIM)
+            screen.blit(opp_base_surf, (50, opponent_y + 30))
+        
+        # 绘制己方区域
+        my_y = SCREEN_HEIGHT - 300
+        my_name_surf = self.font.render(f"{self.player_name}", True, COLOR_TEXT)
+        screen.blit(my_name_surf, (50, my_y))
+        
+        # 基地状态
+        base_text = f"基地HP: {self.local_player.base_hp} MP: {self.local_player.base_mana}"
+        base_surf = self.font_small.render(base_text, True, COLOR_TEXT)
+        screen.blit(base_surf, (50, my_y + 30))
+        
+        # 绘制己方角色
+        for i, char_state in enumerate(self.local_player.chars[:2]):
+            char_x = 50 + i * 200
+            char_rect = pygame.Rect(char_x, my_y + 60, 180, 120)
+            
+            # 高亮选中的角色
+            if i == self.selected_actor_index:
+                pygame.draw.rect(screen, (100, 255, 100), char_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, char_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, char_rect, 2, border_radius=8)
+            
+            # 角色名
+            name = self.font_small.render(char_state.character.name, True, COLOR_TEXT)
+            screen.blit(name, (char_x + 10, my_y + 70))
+            
+            # HP条
+            hp_ratio = max(0, char_state.cur_hp / char_state.character.health)
+            hp_bar_rect = pygame.Rect(char_x + 10, my_y + 100, 160, 15)
+            pygame.draw.rect(screen, (50, 50, 50), hp_bar_rect)
+            hp_fill_rect = pygame.Rect(char_x + 10, my_y + 100, int(160 * hp_ratio), 15)
+            pygame.draw.rect(screen, COLOR_HP_BAR, hp_fill_rect)
+            hp_text = self.font_tiny.render(f"{char_state.cur_hp}/{char_state.character.health}", 
+                                          True, COLOR_TEXT)
+            screen.blit(hp_text, (char_x + 15, my_y + 102))
+            
+            # MP条
+            if char_state.character.is_mage():
+                mp_ratio = max(0, char_state.cur_energy / char_state.character.energy) if char_state.character.energy > 0 else 0
+                mp_bar_rect = pygame.Rect(char_x + 10, my_y + 120, 160, 15)
+                pygame.draw.rect(screen, (30, 30, 30), mp_bar_rect)
+                mp_fill_rect = pygame.Rect(char_x + 10, my_y + 120, int(160 * mp_ratio), 15)
+                pygame.draw.rect(screen, COLOR_ENERGY_BAR, mp_fill_rect)
+                mp_text = self.font_tiny.render(f"MP:{char_state.cur_energy}/{char_state.character.energy}",
+                                              True, COLOR_TEXT)
+                screen.blit(mp_text, (char_x + 15, my_y + 122))
+        
+        # 绘制手牌
+        hand_y = SCREEN_HEIGHT - 140
+        for i, card in enumerate(self.local_player.hand):
+            x = 50 + i * 130
+            card_rect = pygame.Rect(x, hand_y, 120, 100)
+            
+            # 高亮选中的牌
+            if i == self.selected_hand_index:
+                pygame.draw.rect(screen, (255, 255, 100), card_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, card_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, card_rect, 2, border_radius=8)
+            
+            name_surf = self.font_tiny.render(card.name[:10], True, COLOR_TEXT)
+            cost_surf = self.font_small.render(str(card.cost), True, COLOR_MANA_BAR)
+            screen.blit(name_surf, (x + 5, hand_y + 5))
+            screen.blit(cost_surf, (x + 5, hand_y + 25))
+        
+        # 绘制战斗日志
+        log_y = 200
+        for log in self.battle_log[-8:]:
+            log_surf = self.font_tiny.render(log, True, COLOR_TEXT_DIM)
+            screen.blit(log_surf, (SCREEN_WIDTH - 450, log_y))
+            log_y += 18
+        
+        # 按钮
+        self.back_button.draw(screen)
+        if self.my_turn and self.network_battle_started:
+            self.end_turn_button.draw(screen)
+            self.play_card_button.draw(screen)
+            
+            hint = self.font_small.render("选择手牌、角色和目标后点击出牌 | 1-3键发送表情", 
+                                         True, COLOR_TEXT_DIM)
+            screen.blit(hint, (SCREEN_WIDTH//2 - hint.get_width()//2, SCREEN_HEIGHT - 100))
 
 class DeckExportScene(Scene):
     """牌组导出场景"""
@@ -1938,6 +3426,114 @@ class DeckExportScene(Scene):
             text = self.font.render("未找到牌组", True, COLOR_TEXT)
             screen.blit(text, (SCREEN_WIDTH//2 - text.get_width()//2, 300))
             self.back_button.draw(screen)
+    
+    def draw_network_battle(self, screen: pygame.Surface):
+        """绘制网络战斗界面"""
+        if not self.local_player:
+            return
+        
+        # 显示对战信息
+        title = self.font_title.render(f"战斗: {self.player_name} vs {self.opponent_name}", 
+                                      True, COLOR_TEXT)
+        screen.blit(title, (SCREEN_WIDTH//2 - title.get_width()//2, 20))
+        
+        # 显示回合状态
+        turn_text = f"回合 {self.turn_number} - {'你的回合' if self.my_turn else '对方回合'}"
+        turn_color = (100, 255, 100) if self.my_turn else (255, 100, 100)
+        turn_surf = self.font.render(turn_text, True, turn_color)
+        screen.blit(turn_surf, (SCREEN_WIDTH//2 - turn_surf.get_width()//2, 60))
+        
+        # 绘制对手区域（简化显示）
+        if self.remote_player:
+            opponent_y = 100
+            opp_name_surf = self.font.render(f"{self.opponent_name}", True, COLOR_TEXT)
+            screen.blit(opp_name_surf, (50, opponent_y))
+            
+            opp_base_text = f"基地HP: {self.remote_player.base_hp} MP: {self.remote_player.base_mana}"
+            opp_base_surf = self.font_small.render(opp_base_text, True, COLOR_TEXT_DIM)
+            screen.blit(opp_base_surf, (50, opponent_y + 30))
+        
+        # 绘制己方区域
+        my_y = SCREEN_HEIGHT - 300
+        my_name_surf = self.font.render(f"{self.player_name}", True, COLOR_TEXT)
+        screen.blit(my_name_surf, (50, my_y))
+        
+        # 基地状态
+        base_text = f"基地HP: {self.local_player.base_hp} MP: {self.local_player.base_mana}"
+        base_surf = self.font_small.render(base_text, True, COLOR_TEXT)
+        screen.blit(base_surf, (50, my_y + 30))
+        
+        # 绘制己方角色
+        for i, char_state in enumerate(self.local_player.chars[:2]):
+            char_x = 50 + i * 200
+            char_rect = pygame.Rect(char_x, my_y + 60, 180, 120)
+            
+            # 高亮选中的角色
+            if i == self.selected_actor_index:
+                pygame.draw.rect(screen, (100, 255, 100), char_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, char_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, char_rect, 2, border_radius=8)
+            
+            # 角色名
+            name = self.font_small.render(char_state.character.name, True, COLOR_TEXT)
+            screen.blit(name, (char_x + 10, my_y + 70))
+            
+            # HP条
+            hp_ratio = max(0, char_state.cur_hp / char_state.character.health)
+            hp_bar_rect = pygame.Rect(char_x + 10, my_y + 100, 160, 15)
+            pygame.draw.rect(screen, (50, 50, 50), hp_bar_rect)
+            hp_fill_rect = pygame.Rect(char_x + 10, my_y + 100, int(160 * hp_ratio), 15)
+            pygame.draw.rect(screen, COLOR_HP_BAR, hp_fill_rect)
+            hp_text = self.font_tiny.render(f"{char_state.cur_hp}/{char_state.character.health}", 
+                                          True, COLOR_TEXT)
+            screen.blit(hp_text, (char_x + 15, my_y + 102))
+            
+            # MP条
+            if char_state.character.is_mage():
+                mp_ratio = max(0, char_state.cur_energy / char_state.character.energy) if char_state.character.energy > 0 else 0
+                mp_bar_rect = pygame.Rect(char_x + 10, my_y + 120, 160, 15)
+                pygame.draw.rect(screen, (30, 30, 30), mp_bar_rect)
+                mp_fill_rect = pygame.Rect(char_x + 10, my_y + 120, int(160 * mp_ratio), 15)
+                pygame.draw.rect(screen, COLOR_ENERGY_BAR, mp_fill_rect)
+                mp_text = self.font_tiny.render(f"MP:{char_state.cur_energy}/{char_state.character.energy}",
+                                              True, COLOR_TEXT)
+                screen.blit(mp_text, (char_x + 15, my_y + 122))
+        
+        # 绘制手牌
+        hand_y = SCREEN_HEIGHT - 140
+        for i, card in enumerate(self.local_player.hand):
+            x = 50 + i * 130
+            card_rect = pygame.Rect(x, hand_y, 120, 100)
+            
+            # 高亮选中的牌
+            if i == self.selected_hand_index:
+                pygame.draw.rect(screen, (255, 255, 100), card_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, card_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, card_rect, 2, border_radius=8)
+            
+            name_surf = self.font_tiny.render(card.name[:10], True, COLOR_TEXT)
+            cost_surf = self.font_small.render(str(card.cost), True, COLOR_MANA_BAR)
+            screen.blit(name_surf, (x + 5, hand_y + 5))
+            screen.blit(cost_surf, (x + 5, hand_y + 25))
+        
+        # 绘制战斗日志
+        log_y = 200
+        for log in self.battle_log[-8:]:
+            log_surf = self.font_tiny.render(log, True, COLOR_TEXT_DIM)
+            screen.blit(log_surf, (SCREEN_WIDTH - 450, log_y))
+            log_y += 18
+        
+        # 按钮
+        self.back_button.draw(screen)
+        if self.my_turn and self.network_battle_started:
+            self.end_turn_button.draw(screen)
+            self.play_card_button.draw(screen)
+            
+            hint = self.font_small.render("选择手牌、角色和目标后点击出牌 | 1-3键发送表情", 
+                                         True, COLOR_TEXT_DIM)
+            screen.blit(hint, (SCREEN_WIDTH//2 - hint.get_width()//2, SCREEN_HEIGHT - 100))
             return
         
         # 标题
@@ -1963,6 +3559,114 @@ class DeckExportScene(Scene):
             y += 22
         
         self.back_button.draw(screen)
+    
+    def draw_network_battle(self, screen: pygame.Surface):
+        """绘制网络战斗界面"""
+        if not self.local_player:
+            return
+        
+        # 显示对战信息
+        title = self.font_title.render(f"战斗: {self.player_name} vs {self.opponent_name}", 
+                                      True, COLOR_TEXT)
+        screen.blit(title, (SCREEN_WIDTH//2 - title.get_width()//2, 20))
+        
+        # 显示回合状态
+        turn_text = f"回合 {self.turn_number} - {'你的回合' if self.my_turn else '对方回合'}"
+        turn_color = (100, 255, 100) if self.my_turn else (255, 100, 100)
+        turn_surf = self.font.render(turn_text, True, turn_color)
+        screen.blit(turn_surf, (SCREEN_WIDTH//2 - turn_surf.get_width()//2, 60))
+        
+        # 绘制对手区域（简化显示）
+        if self.remote_player:
+            opponent_y = 100
+            opp_name_surf = self.font.render(f"{self.opponent_name}", True, COLOR_TEXT)
+            screen.blit(opp_name_surf, (50, opponent_y))
+            
+            opp_base_text = f"基地HP: {self.remote_player.base_hp} MP: {self.remote_player.base_mana}"
+            opp_base_surf = self.font_small.render(opp_base_text, True, COLOR_TEXT_DIM)
+            screen.blit(opp_base_surf, (50, opponent_y + 30))
+        
+        # 绘制己方区域
+        my_y = SCREEN_HEIGHT - 300
+        my_name_surf = self.font.render(f"{self.player_name}", True, COLOR_TEXT)
+        screen.blit(my_name_surf, (50, my_y))
+        
+        # 基地状态
+        base_text = f"基地HP: {self.local_player.base_hp} MP: {self.local_player.base_mana}"
+        base_surf = self.font_small.render(base_text, True, COLOR_TEXT)
+        screen.blit(base_surf, (50, my_y + 30))
+        
+        # 绘制己方角色
+        for i, char_state in enumerate(self.local_player.chars[:2]):
+            char_x = 50 + i * 200
+            char_rect = pygame.Rect(char_x, my_y + 60, 180, 120)
+            
+            # 高亮选中的角色
+            if i == self.selected_actor_index:
+                pygame.draw.rect(screen, (100, 255, 100), char_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, char_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, char_rect, 2, border_radius=8)
+            
+            # 角色名
+            name = self.font_small.render(char_state.character.name, True, COLOR_TEXT)
+            screen.blit(name, (char_x + 10, my_y + 70))
+            
+            # HP条
+            hp_ratio = max(0, char_state.cur_hp / char_state.character.health)
+            hp_bar_rect = pygame.Rect(char_x + 10, my_y + 100, 160, 15)
+            pygame.draw.rect(screen, (50, 50, 50), hp_bar_rect)
+            hp_fill_rect = pygame.Rect(char_x + 10, my_y + 100, int(160 * hp_ratio), 15)
+            pygame.draw.rect(screen, COLOR_HP_BAR, hp_fill_rect)
+            hp_text = self.font_tiny.render(f"{char_state.cur_hp}/{char_state.character.health}", 
+                                          True, COLOR_TEXT)
+            screen.blit(hp_text, (char_x + 15, my_y + 102))
+            
+            # MP条
+            if char_state.character.is_mage():
+                mp_ratio = max(0, char_state.cur_energy / char_state.character.energy) if char_state.character.energy > 0 else 0
+                mp_bar_rect = pygame.Rect(char_x + 10, my_y + 120, 160, 15)
+                pygame.draw.rect(screen, (30, 30, 30), mp_bar_rect)
+                mp_fill_rect = pygame.Rect(char_x + 10, my_y + 120, int(160 * mp_ratio), 15)
+                pygame.draw.rect(screen, COLOR_ENERGY_BAR, mp_fill_rect)
+                mp_text = self.font_tiny.render(f"MP:{char_state.cur_energy}/{char_state.character.energy}",
+                                              True, COLOR_TEXT)
+                screen.blit(mp_text, (char_x + 15, my_y + 122))
+        
+        # 绘制手牌
+        hand_y = SCREEN_HEIGHT - 140
+        for i, card in enumerate(self.local_player.hand):
+            x = 50 + i * 130
+            card_rect = pygame.Rect(x, hand_y, 120, 100)
+            
+            # 高亮选中的牌
+            if i == self.selected_hand_index:
+                pygame.draw.rect(screen, (255, 255, 100), card_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, card_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, card_rect, 2, border_radius=8)
+            
+            name_surf = self.font_tiny.render(card.name[:10], True, COLOR_TEXT)
+            cost_surf = self.font_small.render(str(card.cost), True, COLOR_MANA_BAR)
+            screen.blit(name_surf, (x + 5, hand_y + 5))
+            screen.blit(cost_surf, (x + 5, hand_y + 25))
+        
+        # 绘制战斗日志
+        log_y = 200
+        for log in self.battle_log[-8:]:
+            log_surf = self.font_tiny.render(log, True, COLOR_TEXT_DIM)
+            screen.blit(log_surf, (SCREEN_WIDTH - 450, log_y))
+            log_y += 18
+        
+        # 按钮
+        self.back_button.draw(screen)
+        if self.my_turn and self.network_battle_started:
+            self.end_turn_button.draw(screen)
+            self.play_card_button.draw(screen)
+            
+            hint = self.font_small.render("选择手牌、角色和目标后点击出牌 | 1-3键发送表情", 
+                                         True, COLOR_TEXT_DIM)
+            screen.blit(hint, (SCREEN_WIDTH//2 - hint.get_width()//2, SCREEN_HEIGHT - 100))
         self.copy_button.draw(screen)
 
 class DeckImportScene(Scene):
@@ -2091,6 +3795,114 @@ class DeckImportScene(Scene):
             screen.blit(msg_surf, (SCREEN_WIDTH//2 - msg_surf.get_width()//2, 460))
         
         self.back_button.draw(screen)
+    
+    def draw_network_battle(self, screen: pygame.Surface):
+        """绘制网络战斗界面"""
+        if not self.local_player:
+            return
+        
+        # 显示对战信息
+        title = self.font_title.render(f"战斗: {self.player_name} vs {self.opponent_name}", 
+                                      True, COLOR_TEXT)
+        screen.blit(title, (SCREEN_WIDTH//2 - title.get_width()//2, 20))
+        
+        # 显示回合状态
+        turn_text = f"回合 {self.turn_number} - {'你的回合' if self.my_turn else '对方回合'}"
+        turn_color = (100, 255, 100) if self.my_turn else (255, 100, 100)
+        turn_surf = self.font.render(turn_text, True, turn_color)
+        screen.blit(turn_surf, (SCREEN_WIDTH//2 - turn_surf.get_width()//2, 60))
+        
+        # 绘制对手区域（简化显示）
+        if self.remote_player:
+            opponent_y = 100
+            opp_name_surf = self.font.render(f"{self.opponent_name}", True, COLOR_TEXT)
+            screen.blit(opp_name_surf, (50, opponent_y))
+            
+            opp_base_text = f"基地HP: {self.remote_player.base_hp} MP: {self.remote_player.base_mana}"
+            opp_base_surf = self.font_small.render(opp_base_text, True, COLOR_TEXT_DIM)
+            screen.blit(opp_base_surf, (50, opponent_y + 30))
+        
+        # 绘制己方区域
+        my_y = SCREEN_HEIGHT - 300
+        my_name_surf = self.font.render(f"{self.player_name}", True, COLOR_TEXT)
+        screen.blit(my_name_surf, (50, my_y))
+        
+        # 基地状态
+        base_text = f"基地HP: {self.local_player.base_hp} MP: {self.local_player.base_mana}"
+        base_surf = self.font_small.render(base_text, True, COLOR_TEXT)
+        screen.blit(base_surf, (50, my_y + 30))
+        
+        # 绘制己方角色
+        for i, char_state in enumerate(self.local_player.chars[:2]):
+            char_x = 50 + i * 200
+            char_rect = pygame.Rect(char_x, my_y + 60, 180, 120)
+            
+            # 高亮选中的角色
+            if i == self.selected_actor_index:
+                pygame.draw.rect(screen, (100, 255, 100), char_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, char_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, char_rect, 2, border_radius=8)
+            
+            # 角色名
+            name = self.font_small.render(char_state.character.name, True, COLOR_TEXT)
+            screen.blit(name, (char_x + 10, my_y + 70))
+            
+            # HP条
+            hp_ratio = max(0, char_state.cur_hp / char_state.character.health)
+            hp_bar_rect = pygame.Rect(char_x + 10, my_y + 100, 160, 15)
+            pygame.draw.rect(screen, (50, 50, 50), hp_bar_rect)
+            hp_fill_rect = pygame.Rect(char_x + 10, my_y + 100, int(160 * hp_ratio), 15)
+            pygame.draw.rect(screen, COLOR_HP_BAR, hp_fill_rect)
+            hp_text = self.font_tiny.render(f"{char_state.cur_hp}/{char_state.character.health}", 
+                                          True, COLOR_TEXT)
+            screen.blit(hp_text, (char_x + 15, my_y + 102))
+            
+            # MP条
+            if char_state.character.is_mage():
+                mp_ratio = max(0, char_state.cur_energy / char_state.character.energy) if char_state.character.energy > 0 else 0
+                mp_bar_rect = pygame.Rect(char_x + 10, my_y + 120, 160, 15)
+                pygame.draw.rect(screen, (30, 30, 30), mp_bar_rect)
+                mp_fill_rect = pygame.Rect(char_x + 10, my_y + 120, int(160 * mp_ratio), 15)
+                pygame.draw.rect(screen, COLOR_ENERGY_BAR, mp_fill_rect)
+                mp_text = self.font_tiny.render(f"MP:{char_state.cur_energy}/{char_state.character.energy}",
+                                              True, COLOR_TEXT)
+                screen.blit(mp_text, (char_x + 15, my_y + 122))
+        
+        # 绘制手牌
+        hand_y = SCREEN_HEIGHT - 140
+        for i, card in enumerate(self.local_player.hand):
+            x = 50 + i * 130
+            card_rect = pygame.Rect(x, hand_y, 120, 100)
+            
+            # 高亮选中的牌
+            if i == self.selected_hand_index:
+                pygame.draw.rect(screen, (255, 255, 100), card_rect.inflate(4, 4), border_radius=8)
+            
+            pygame.draw.rect(screen, COLOR_CARD_BG, card_rect, border_radius=8)
+            pygame.draw.rect(screen, COLOR_CARD_BORDER, card_rect, 2, border_radius=8)
+            
+            name_surf = self.font_tiny.render(card.name[:10], True, COLOR_TEXT)
+            cost_surf = self.font_small.render(str(card.cost), True, COLOR_MANA_BAR)
+            screen.blit(name_surf, (x + 5, hand_y + 5))
+            screen.blit(cost_surf, (x + 5, hand_y + 25))
+        
+        # 绘制战斗日志
+        log_y = 200
+        for log in self.battle_log[-8:]:
+            log_surf = self.font_tiny.render(log, True, COLOR_TEXT_DIM)
+            screen.blit(log_surf, (SCREEN_WIDTH - 450, log_y))
+            log_y += 18
+        
+        # 按钮
+        self.back_button.draw(screen)
+        if self.my_turn and self.network_battle_started:
+            self.end_turn_button.draw(screen)
+            self.play_card_button.draw(screen)
+            
+            hint = self.font_small.render("选择手牌、角色和目标后点击出牌 | 1-3键发送表情", 
+                                         True, COLOR_TEXT_DIM)
+            screen.blit(hint, (SCREEN_WIDTH//2 - hint.get_width()//2, SCREEN_HEIGHT - 100))
         self.import_button.draw(screen)
 
 # ============= 主游戏类 =============
