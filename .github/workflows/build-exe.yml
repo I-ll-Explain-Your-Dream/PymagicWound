@@ -1,0 +1,122 @@
+name: Build Windows EXE
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: ['*']
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller pygame pillow
+
+      - name: Verify assets directory exists
+        run: |
+          if (Test-Path "assets") {
+            Write-Host "Assets directory found"
+            Get-ChildItem -Path "assets" -Recurse
+          } else {
+            Write-Host "Assets directory not found"
+            exit 1
+          }
+
+      - name: Build EXE with PyInstaller
+        run: |
+          pyinstaller --clean MagicWound.spec
+
+      - name: Verify build output
+        run: |
+          if (Test-Path "dist/MagicWound.exe") {
+            Write-Host "EXE built successfully"
+            Get-Item "dist/MagicWound.exe"
+          } else {
+            Write-Host "EXE build failed"
+            exit 1
+          }
+
+      - name: Test EXE (basic validation)
+        run: |
+          # Test if the EXE can start (will timeout after 10 seconds)
+          $process = Start-Process -FilePath "dist/MagicWound.exe" -PassThru
+          Start-Sleep -Seconds 5
+          if (!$process.HasExited) {
+            Write-Host "EXE started successfully"
+            Stop-Process -Id $process.Id -Force
+          } else {
+            Write-Host "EXE exited immediately - checking for errors"
+            exit 1
+          }
+
+      - name: Upload built artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MagicWound-windows
+          path: dist/MagicWound.exe
+          retention-days: 30
+
+  publish-release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build-windows
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download built artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: MagicWound-windows
+          path: ./out
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          body: |
+            Automated build of MagicWound (魔法伤痕)
+            
+            Features:
+            - Local area network (LAN) multiplayer battles
+            - Card-based combat system with 6 elemental mages
+            - Single player campaign mode
+            - Character progression and ability system
+            
+            Installation:
+            1. Download MagicWound.exe
+            2. Run the executable
+            3. No additional installation required
+            
+            For detailed usage instructions, see the README.md file.
+          draft: false
+          prerelease: false
+
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./out/MagicWound.exe
+          asset_name: MagicWound-${{ github.ref_name }}.exe
+          asset_content_type: application/octet-stream
