@@ -2,8 +2,10 @@ name: Build and Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [ main, master ]
+    tags: ['*']
+  pull_request:
+    branches: [ main, master ]
 
 jobs:
   build:
@@ -58,20 +60,6 @@ jobs:
         release_name: MagicWound v${{ steps.version.outputs.version }}
         body: |
           ## MagicWound v${{ steps.version.outputs.version }}
-          
-          ### 新功能
-          - 完整的局域网对战功能
-          - 支持16个角色（8个法师，8个普通人）
-          - 完整的游戏规则实现
-          
-          ### 下载说明
-          - 下载 `MagicWound.zip` 解压后运行 `MagicWound.exe`
-          - 确保防火墙允许程序访问网络（局域网对战需要）
-          
-          ### 系统要求
-          - Windows 10/11
-          - 支持DirectX的显卡
-          
         draft: false
         prerelease: false
         
