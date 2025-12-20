@@ -39,7 +39,7 @@ jobs:
 
       - name: Build EXE with PyInstaller
         run: |
-          pyinstaller --clean MagicWound.spec
+          pyinstaller --onefile --windowed --icon=assets/icon.ico --name=MagicWound MagicWound.py
 
       - name: Verify build output
         run: |
