@@ -95,18 +95,6 @@ jobs:
           release_name: Release ${{ github.ref_name }}
           body: |
             Automated build of MagicWound (魔法伤痕)
-            
-            Features:
-            - Local area network (LAN) multiplayer battles
-            - Card-based combat system with 6 elemental mages
-            - Single player campaign mode
-            - Character progression and ability system
-            
-            Installation:
-            1. Download MagicWound.exe
-            2. Run the executable
-            3. No additional installation required
-            
             For detailed usage instructions, see the README.md file.
           draft: false
           prerelease: false
